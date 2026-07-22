@@ -2,46 +2,75 @@ package com.minidrive.minigoogledrive.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Service
 public class JwtService {
 
-    // Use a long, random secret key (at least 256 bits)
-    private static final String SECRET = "replace_this_with_a_very_long_secret_key_for_jwt_256bit_minimum";
+    private static final String SECRET =
+            "ThisIsMyVerySecureSecretKeyForMiniGoogleDriveProject123456789";
 
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes());
+
+    private final SecretKey key = Keys.hmacShaKeyFor(
+            SECRET.getBytes(StandardCharsets.UTF_8)
+    );
+
+
+    // Generate JWT Token
+    public String generateToken(String username) {
+
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(
+                        new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)
+                )
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 
-    // Extract username (subject) from token
+
+    // Extract username
     public String extractUsername(String token) {
-        return extractAllClaims(token).getSubject();
-    }
 
-    // Validate token against user details
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-
-    // Helper: extract all claims
-    private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+
+        return claims.getSubject();
     }
 
-    // Helper: check expiration
+
+    // Validate token
+    public boolean validateToken(String token, String username) {
+
+        return extractUsername(token).equals(username)
+                && !isTokenExpired(token);
+    }
+
+
     private boolean isTokenExpired(String token) {
-        return extractAllClaims(token).getExpiration().before(new Date());
+
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.getExpiration().before(new Date());
+    }
+
+
+    // Used in JwtFilter
+    public SecretKey getSigningKey() {
+        return key;
     }
 }
-
