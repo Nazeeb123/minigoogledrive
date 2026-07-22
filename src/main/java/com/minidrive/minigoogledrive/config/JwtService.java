@@ -39,4 +39,9 @@ public class JwtService {
 
         return claims.getSubject();
     }
+    public SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(
+            SECRET.getBytes(StandardCharsets.UTF_8)
+        );
+    }
 }
