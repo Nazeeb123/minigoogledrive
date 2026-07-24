@@ -1,11 +1,12 @@
 package com.minidrive.minigoogledrive.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "file_data")
 public class FileData {
 
     @Id
@@ -14,13 +15,18 @@ public class FileData {
 
     private String fileName;
 
-    private String fileType;
-
-    private Long fileSize;
-
     private String filePath;
 
+    private String fileType;
+
+    private long fileSize;
+
     private LocalDateTime uploadDate;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    private User user;
 
     public FileData() {
     }
@@ -41,6 +47,14 @@ public class FileData {
         this.fileName = fileName;
     }
 
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
     public String getFileType() {
         return fileType;
     }
@@ -49,20 +63,12 @@ public class FileData {
         this.fileType = fileType;
     }
 
-    public Long getFileSize() {
+    public long getFileSize() {
         return fileSize;
     }
 
-    public void setFileSize(Long fileSize) {
+    public void setFileSize(long fileSize) {
         this.fileSize = fileSize;
-    }
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
     }
 
     public LocalDateTime getUploadDate() {
@@ -72,10 +78,6 @@ public class FileData {
     public void setUploadDate(LocalDateTime uploadDate) {
         this.uploadDate = uploadDate;
     }
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    @JsonIgnore
-    private User user;
 
     public User getUser() {
         return user;

@@ -1,11 +1,8 @@
 package com.minidrive.minigoogledrive.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import java.util.List;
-import jakarta.persistence.OneToMany;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
@@ -16,17 +13,16 @@ public class User {
     private Long id;
 
     private String username;
+
     private String email;
+
     private String password;
 
-    public User() {
-    }
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<FileData> files;
 
-    public User(Long id, String username, String email, String password) {
-        this.id = id;
-        this.username = username;
-        this.email = email;
-        this.password = password;
+    public User() {
     }
 
     public Long getId() {
@@ -60,9 +56,6 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
-    @OneToMany(mappedBy = "user")
-    @JsonIgnore
-    private List<FileData> files;
 
     public List<FileData> getFiles() {
         return files;
