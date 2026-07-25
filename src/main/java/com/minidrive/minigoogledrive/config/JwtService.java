@@ -2,75 +2,49 @@ package com.minidrive.minigoogledrive.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
 
 @Service
 public class JwtService {
 
-    private static final String SECRET =
-            "ThisIsMyVerySecureSecretKeyForMiniGoogleDriveProject123456789";
+    private static final String SECRET = "replace_this_with_a_very_long_secret_key_for_jwt_256bit_minimum";
 
-
-    private final SecretKey key = Keys.hmacShaKeyFor(
-            SECRET.getBytes(StandardCharsets.UTF_8)
-    );
-
-
-    // Generate JWT Token
-    public String generateToken(String username) {
-
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date())
-                .setExpiration(
-                        new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)
-                )
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(SECRET.getBytes());
     }
 
-
-    // Extract username
     public String extractUsername(String token) {
+        return extractAllClaims(token).getSubject();
+    }
 
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
+    public boolean validateToken(String token, String username) {
+        final String extracted = extractUsername(token);
+        return (extracted.equals(username) && !isTokenExpired(token));
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-
-        return claims.getSubject();
     }
-
-
-    // Validate token
-    public boolean validateToken(String token, String username) {
-
-        return extractUsername(token).equals(username)
-                && !isTokenExpired(token);
-    }
-
 
     private boolean isTokenExpired(String token) {
-
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
-        return claims.getExpiration().before(new Date());
+        return extractAllClaims(token).getExpiration().before(new Date());
     }
 
-
-    // Used in JwtFilter
-    public SecretKey getSigningKey() {
-        return key;
+    // 🚀 Generate token using just username/email
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hour
+                .signWith(getSigningKey())
+                .compact();
     }
 }

@@ -11,9 +11,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.security.core.userdetails.UserDetails;
+
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 
 import org.springframework.stereotype.Component;
+
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -35,12 +37,27 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
 
+    // Do not check JWT for register and login
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+
+        String path = request.getRequestURI();
+
+        return path.equals("/register") ||
+               path.equals("/login");
+    }
+
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+
+
+        System.out.println("JWT FILTER RUNNING: "
+                + request.getRequestURI());
 
 
         String authHeader = request.getHeader("Authorization");
@@ -50,7 +67,9 @@ public class JwtFilter extends OncePerRequestFilter {
         String email = null;
 
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        if (authHeader != null &&
+                authHeader.startsWith("Bearer ")) {
+
 
             token = authHeader.substring(7);
 
@@ -59,11 +78,13 @@ public class JwtFilter extends OncePerRequestFilter {
 
 
         if (email != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+                SecurityContextHolder.getContext()
+                        .getAuthentication() == null) {
 
 
             UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(email);
+                    userDetailsService
+                            .loadUserByUsername(email);
 
 
             if (jwtService.validateToken(token, email)) {
