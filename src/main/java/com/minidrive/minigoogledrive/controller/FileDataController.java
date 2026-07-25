@@ -5,8 +5,6 @@ import com.minidrive.minigoogledrive.service.FileDataService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,40 +18,70 @@ public class FileDataController {
     @Autowired
     private FileDataService fileDataService;
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public FileData uploadFile(@RequestParam("file") MultipartFile file) {
-        return fileDataService.uploadFile(file);
+
+    // Upload file
+    @PostMapping("/upload")
+    public ResponseEntity<FileData> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("email") String email) {
+
+        FileData fileData = fileDataService.uploadFile(file, email);
+
+        return ResponseEntity.ok(fileData);
     }
 
-    @GetMapping
-    public List<FileData> getAllFiles() {
-        return fileDataService.getAllFiles();
+
+    // Get all files
+    @GetMapping("/all")
+    public ResponseEntity<List<FileData>> getAllFiles() {
+
+        List<FileData> files = fileDataService.getAllFiles();
+
+        return ResponseEntity.ok(files);
     }
 
+
+    // Download file
     @GetMapping("/download/{id}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable Long id) {
 
         Resource resource = fileDataService.downloadFile(id);
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
+        return ResponseEntity.ok(resource);
     }
 
+
+    // Delete file
     @DeleteMapping("/{id}")
-    public String deleteFile(@PathVariable Long id) {
-        return fileDataService.deleteFile(id);
+    public ResponseEntity<String> deleteFile(
+            @PathVariable Long id) {
+
+        String response = fileDataService.deleteFile(id);
+
+        return ResponseEntity.ok(response);
     }
 
+
+    // Search file
     @GetMapping("/search")
-    public List<FileData> searchFiles(@RequestParam("name") String fileName) {
-        return fileDataService.searchFiles(fileName);
+    public ResponseEntity<List<FileData>> searchFiles(
+            @RequestParam String fileName) {
+
+        return ResponseEntity.ok(
+                fileDataService.searchFiles(fileName)
+        );
     }
 
+
+    // Rename file
     @PutMapping("/rename/{id}")
-    public String renameFile(@PathVariable Long id,
-                             @RequestParam("newName") String newName) {
-        return fileDataService.renameFile(id, newName);
+    public ResponseEntity<String> renameFile(
+            @PathVariable Long id,
+            @RequestParam String newName) {
+
+        return ResponseEntity.ok(
+                fileDataService.renameFile(id, newName)
+        );
     }
 }
