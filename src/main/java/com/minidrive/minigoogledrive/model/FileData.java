@@ -1,10 +1,15 @@
 package com.minidrive.minigoogledrive.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.*; 
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 @Entity
 public class FileData {
@@ -22,11 +27,29 @@ public class FileData {
     private long fileSize;
 
     private LocalDateTime uploadDate;
+    private boolean deleted = false;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     @JsonIgnore
     private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "folder_id")
+    @JsonBackReference
+    private Folder folder;
+
+    @ManyToMany
+    private List<User> sharedUsers = new ArrayList<>();
+
+    public List<User> getSharedUsers() {
+        return sharedUsers;
+    }
+
+    public void setSharedUsers(List<User> sharedUsers) {
+        this.sharedUsers = sharedUsers;
+    }
+
 
     public FileData() {
     }
@@ -85,5 +108,19 @@ public class FileData {
 
     public void setUser(User user) {
         this.user = user;
+    }
+    public Folder getFolder() {
+        return folder;
+    }
+
+    public void setFolder(Folder folder) {
+        this.folder = folder;
+    }
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

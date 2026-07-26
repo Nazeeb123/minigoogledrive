@@ -47,69 +47,81 @@ public class JwtFilter extends OncePerRequestFilter {
                path.equals("/login");
     }
 
-
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+        protected void doFilterInternal(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        FilterChain filterChain
+        ) throws ServletException, IOException {
 
 
-        System.out.println("JWT FILTER RUNNING: "
-                + request.getRequestURI());
+    System.out.println("JWT FILTER RUNNING: "
+            + request.getRequestURI());
 
 
-        String authHeader = request.getHeader("Authorization");
+    String authHeader = request.getHeader("Authorization");
+
+    System.out.println("AUTH HEADER: " + authHeader);
 
 
-        String token = null;
-        String email = null;
+    String token = null;
+    String email = null;
 
 
-        if (authHeader != null &&
-                authHeader.startsWith("Bearer ")) {
+    if (authHeader != null &&authHeader.startsWith("Bearer ")) {
+        token = authHeader.substring(7);
+
+        email = jwtService.extractUsername(token);
+
+        System.out.println("TOKEN EMAIL: " + email);
+    }
 
 
-            token = authHeader.substring(7);
-
-            email = jwtService.extractUsername(token);
-        }
-
-
-        if (email != null &&
-                SecurityContextHolder.getContext()
-                        .getAuthentication() == null) {
+    if (email != null &&
+            SecurityContextHolder.getContext()
+                    .getAuthentication() == null) {
 
 
-            UserDetails userDetails =
-                    userDetailsService
-                            .loadUserByUsername(email);
+        UserDetails userDetails =
+                userDetailsService
+                        .loadUserByUsername(email);
 
 
-            if (jwtService.validateToken(token, email)) {
+                if (jwtService.validateToken(token, email)) {
 
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+
+
+                        authentication.setDetails(
+                                new WebAuthenticationDetailsSource()
+                                        .buildDetails(request)
                         );
 
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request)
-                );
+                        SecurityContextHolder.getContext()
+                                 .setAuthentication(authentication);
+                        System.out.println(
+                                                "AUTHENTICATED USER: "
+                                 + SecurityContextHolder.getContext()
+                                        .getAuthentication()
+                                        .getName()
+                                );
 
-
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
-            }
+                        System.out.println("AUTH SET: " +
+                                SecurityContextHolder.getContext()
+                                        .getAuthentication()
+                                        .getName());
+                }
         }
 
 
         filterChain.doFilter(request, response);
-    }
+        }
+    
 }
