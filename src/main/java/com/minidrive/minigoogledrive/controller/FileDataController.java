@@ -1,6 +1,7 @@
 package com.minidrive.minigoogledrive.controller;
 
 import com.minidrive.minigoogledrive.model.FileData;
+import com.minidrive.minigoogledrive.model.FileVersion;
 import com.minidrive.minigoogledrive.service.FileDataService;
 import com.minidrive.minigoogledrive.model.User;
 import com.minidrive.minigoogledrive.repository.UserRepository;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/files")
@@ -21,6 +23,9 @@ public class FileDataController {
 
     @Autowired
     private FileDataService fileDataService;
+
+    @Autowired
+    private UserRepository userRepository;
 
 
     // Upload file
@@ -160,4 +165,117 @@ public ResponseEntity<Resource> downloadFile(
             fileDataService.getSharedFiles(email)
         );
     }
+    @PutMapping("/{id}/star")
+    public ResponseEntity<FileData> toggleStar(@PathVariable Long id,
+                                           Authentication authentication) {
+
+        User user = userRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        FileData updatedFile = fileDataService.toggleStar(id, user);
+
+        return ResponseEntity.ok(updatedFile);
+    }
+    @GetMapping("/starred")
+    public ResponseEntity<List<FileData>> getStarredFiles(Authentication authentication) {
+
+     User user = userRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<FileData> starredFiles = fileDataService.getStarredFiles(user);
+
+        return ResponseEntity.ok(starredFiles);
+    }
+    @GetMapping("/recent")
+    public ResponseEntity<List<FileData>> getRecentFiles(Authentication authentication) {
+
+        User user = userRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<FileData> recentFiles = fileDataService.getRecentFiles(user);
+
+        return ResponseEntity.ok(recentFiles);
+    }
+    @GetMapping("/storage")
+    public ResponseEntity<Map<String, Object>> getStorageUsage(Authentication authentication) {
+
+        User user = userRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Map<String, Object> storage = fileDataService.getStorageUsage(user);
+
+            return ResponseEntity.ok(storage);
+    }
+    @PostMapping("/{id}/share-link")
+    public ResponseEntity<String> generateShareLink(
+        @PathVariable Long id,
+        Authentication authentication) {
+
+        User user = userRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String shareLink = fileDataService.generateShareLink(id, user);
+
+        return ResponseEntity.ok(shareLink);
+    }
+    @GetMapping("/shared/{token}")
+    public ResponseEntity<Resource> downloadSharedFile(
+        @PathVariable String token) {
+
+        Resource resource = fileDataService.downloadSharedFile(token);
+
+        return ResponseEntity.ok()
+            .body(resource);
+    }
+    @PutMapping("/{id}/disable-share")
+    public ResponseEntity<FileData> disableShareLink(
+        @PathVariable Long id,
+        Authentication authentication) {
+
+        User user = userRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        FileData fileData = fileDataService.disableShareLink(id, user);
+
+        return ResponseEntity.ok(fileData);
+    }
+    @PostMapping("/{id}/versions")
+    public ResponseEntity<FileData> uploadNewVersion(
+        @PathVariable Long id,
+        @RequestParam("file") MultipartFile file,
+        Authentication authentication) {
+
+
+        User user = userRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+
+        FileData updatedFile =
+            fileDataService.uploadNewVersion(id, file, user);
+
+
+        return ResponseEntity.ok(updatedFile);
+    }
+    @GetMapping("/{id}/versions")
+    public ResponseEntity<List<FileVersion>> getFileVersions(
+        @PathVariable Long id) {
+
+        List<FileVersion> versions =
+            fileDataService.getFileVersions(id);
+
+        return ResponseEntity.ok(versions);
+    }
+    @PutMapping("/versions/{versionId}/restore")
+    public ResponseEntity<FileData> restoreVersion(
+        @PathVariable Long versionId,
+        Authentication authentication) {
+
+        User user = userRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        FileData restoredFile = fileDataService.restoreVersion(versionId, user);
+
+        return ResponseEntity.ok(restoredFile);
+    }
+    
 }

@@ -31,6 +31,23 @@ public class UserService {
         user.setPassword(
                 passwordEncoder.encode(user.getPassword())
         );
+        String password = user.getPassword();
+
+        if (password.length() < 8) {
+            throw new RuntimeException("Password must be at least 8 characters long");
+        }
+
+        if (!password.matches(".*[A-Z].*")) {
+            throw new RuntimeException("Password must contain at least one uppercase letter");
+        }
+
+        if (!password.matches(".*[a-z].*")) {
+            throw new RuntimeException("Password must contain at least one lowercase letter");
+        }
+
+        if (!password.matches(".*\\d.*")) {
+            throw new RuntimeException("Password must contain at least one number");
+        }
 
         return userRepository.save(user);
     }

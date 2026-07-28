@@ -28,6 +28,15 @@ public class FileData {
 
     private LocalDateTime uploadDate;
     private boolean deleted = false;
+    private boolean starred = false;
+
+    private LocalDateTime lastAccessed;
+
+    private String shareToken;
+
+    private boolean linkSharing = false;
+
+
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -122,5 +131,35 @@ public class FileData {
 
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
+    }
+    public boolean isStarred() {
+        return starred;
+    }
+
+    public void setStarred(boolean starred) {
+        this.starred = starred;
+    }
+    public LocalDateTime getLastAccessed() {
+        return lastAccessed;
+    }
+
+    public void setLastAccessed(LocalDateTime lastAccessed) {
+        this.lastAccessed = lastAccessed;
+    }
+    public String getShareToken() {
+        return shareToken;
+    }
+
+    public void setShareToken(String shareToken) {
+        this.shareToken = shareToken;
+    }
+
+
+    public boolean isLinkSharing() {
+        return linkSharing;
+    }
+
+    public void setLinkSharing(boolean linkSharing) {
+        this.linkSharing = linkSharing;
     }
 }
