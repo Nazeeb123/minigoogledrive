@@ -1,0 +1,231 @@
+/* =========================================
+   FOLDER CARD
+========================================= */
+
+.folder-card {
+    width: 205px;
+    min-height: 170px;
+    padding: 16px;
+
+    background: white;
+    border-radius: 16px;
+
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+
+    position: relative;
+    cursor: pointer;
+    box-sizing: border-box;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+/* =========================================
+   CARD HOVER
+========================================= */
+
+.folder-card:hover {
+    transform: translateY(-4px);
+
+    box-shadow:
+        0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+
+/* =========================================
+   THREE DOT CONTAINER
+========================================= */
+
+.folder-menu {
+    position: absolute;
+
+    top: 10px;
+    right: 10px;
+
+    z-index: 100;
+}
+
+
+/* =========================================
+   THREE DOT BUTTON
+========================================= */
+
+.folder-menu .menu-btn {
+    width: 34px;
+    height: 34px;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #555;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 20px;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+
+.folder-menu .menu-btn:hover {
+    background: #f1f1f1;
+
+    color: #111;
+}
+
+
+/* =========================================
+   DROPDOWN MENU
+========================================= */
+
+.folder-menu .file-menu {
+    position: absolute;
+
+    top: 38px;
+    right: 0;
+
+    width: 190px;
+
+    background: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 12px;
+
+    padding: 6px 0;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.15);
+
+    z-index: 9999;
+
+    text-align: left;
+
+    overflow: hidden;
+}
+
+
+/* =========================================
+   MENU BUTTONS
+========================================= */
+
+.folder-menu .file-menu button {
+    width: 100%;
+
+    min-height: 42px;
+
+    padding: 10px 15px;
+
+    border: none;
+
+    outline: none;
+
+    background: white;
+
+    color: #222;
+
+    font-size: 14px;
+
+    font-family: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    box-sizing: border-box;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+
+/* =========================================
+   MENU HOVER
+========================================= */
+
+.folder-menu .file-menu button:hover {
+    background: #f5f5f5;
+
+    color: #111;
+}
+
+
+/* =========================================
+   FOLDER ICON
+========================================= */
+
+.folder-icon {
+    width: 85px;
+    height: 85px;
+
+    margin: 20px auto 12px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 70px;
+
+    line-height: 1;
+
+    user-select: none;
+}
+
+
+/* =========================================
+   FOLDER NAME
+========================================= */
+
+.folder-card h3 {
+    margin-top: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #222;
+
+    text-align: center;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================
+   IMPORTANT:
+   DON'T LET MENU TRIGGER CARD HOVER
+========================================= */
+
+.folder-menu,
+.folder-menu * {
+    transform: none !important;
+}
+
+
+/* =========================================
+   MENU ACTIVE STATE
+========================================= */
+
+.folder-menu .menu-btn:active {
+    background: #e5e7eb;
+}

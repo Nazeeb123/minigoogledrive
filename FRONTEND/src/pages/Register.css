@@ -1,0 +1,374 @@
+* {
+    box-sizing: border-box;
+}
+
+.register-page {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(circle at top,
+            #f5f7fa 0%,
+            #eef1f5 45%,
+            #e5e9ef 100%);
+
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    position: relative;
+}
+
+
+/* =========================
+   REGISTER CARD
+========================= */
+
+.register-card {
+    width: 420px;
+    padding: 38px 40px;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 22px;
+
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.10),
+        0 5px 15px rgba(0, 0, 0, 0.05);
+
+    text-align: center;
+}
+
+
+/* =========================
+   LOGO
+========================= */
+
+.register-logo-circle {
+    width: 76px;
+    height: 76px;
+
+    margin: 0 auto 20px;
+
+    border-radius: 50%;
+
+    background: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.12),
+        0 2px 6px rgba(0, 0, 0, 0.06);
+
+    transition: 0.25s ease;
+}
+
+.register-logo-circle:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 12px 25px rgba(0, 0, 0, 0.15),
+        0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.register-logo-circle img {
+    width: 52px;
+    height: 52px;
+
+    object-fit: contain;
+
+    border-radius: 50%;
+}
+
+
+/* =========================
+   TITLE
+========================= */
+
+.register-card h1 {
+    margin: 0;
+
+    font-size: 27px;
+    font-weight: 700;
+
+    color: #171717;
+}
+
+.register-subtitle {
+    margin: 8px 0 28px;
+
+    font-size: 13px;
+
+    color: #777;
+}
+
+
+/* =========================
+   INPUTS
+========================= */
+
+.register-input-group {
+    text-align: left;
+
+    margin-bottom: 17px;
+}
+
+.register-input-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    color: #444;
+}
+
+.register-input-group input {
+    width: 100%;
+
+    height: 47px;
+
+    padding: 0 14px;
+
+    border: 1px solid #d8dce2;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    background: #fafafa;
+
+    font-size: 14px;
+
+    color: #222;
+
+    transition: 0.2s;
+}
+
+.register-input-group input:focus {
+    background: #ffffff;
+
+    border-color: #777;
+
+    box-shadow:
+        0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.register-input-group input::placeholder {
+    color: #aaa;
+}
+
+
+/* =========================
+   REGISTER BUTTON
+========================= */
+
+.register-button {
+    width: 100%;
+
+    height: 48px;
+
+    margin-top: 8px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #171717;
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.register-button:hover {
+    background: #2b2b2b;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 7px 15px rgba(0, 0, 0, 0.15);
+}
+
+.register-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =========================
+   LOGIN LINK
+========================= */
+
+.login-link {
+    margin-top: 22px;
+
+    font-size: 13px;
+
+    color: #777;
+}
+
+.login-link a {
+    color: #171717;
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================
+   SUCCESS OVERLAY
+========================= */
+
+.success-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.35);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    z-index: 9999;
+
+    backdrop-filter: blur(3px);
+}
+
+
+/* =========================
+   SUCCESS POPUP
+========================= */
+
+.success-popup {
+    width: 360px;
+
+    padding: 32px 28px;
+
+    background: white;
+
+    border-radius: 18px;
+
+    text-align: center;
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.22);
+
+    animation: popupIn 0.25s ease;
+}
+
+@keyframes popupIn {
+
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+}
+
+
+/* SUCCESS ICON */
+
+.success-icon {
+    width: 55px;
+    height: 55px;
+
+    margin: 0 auto 15px;
+
+    border-radius: 50%;
+
+    background: #171717;
+
+    color: white;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 25px;
+    font-weight: 700;
+}
+
+.success-popup h2 {
+    margin: 0;
+
+    font-size: 19px;
+
+    color: #171717;
+}
+
+.success-popup p {
+    margin: 9px 0;
+
+    font-size: 13px;
+
+    color: #666;
+
+    line-height: 1.5;
+}
+
+.success-popup span {
+    display: block;
+
+    margin-top: 14px;
+
+    font-size: 11px;
+
+    color: #999;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 500px) {
+
+    .register-card {
+        width: calc(100% - 30px);
+
+        padding: 32px 25px;
+    }
+
+    .success-popup {
+        width: calc(100% - 40px);
+    }
+
+}

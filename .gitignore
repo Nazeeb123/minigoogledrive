@@ -1,0 +1,49 @@
+# =========================
+# BACKEND - Spring Boot
+# =========================
+
+BACKEND/target/
+BACKEND/uploads/
+
+# Maven
+BACKEND/.mvn/wrapper/maven-wrapper.jar
+
+# Environment / secrets
+.env
+*.env
+BACKEND/.env
+
+# Logs
+*.log
+
+
+# =========================
+# FRONTEND - React / Vite
+# =========================
+
+FRONTEND/node_modules/
+FRONTEND/dist/
+
+# Environment / secrets
+FRONTEND/.env
+FRONTEND/.env.*
+!FRONTEND/.env.example
+
+
+# =========================
+# IDE
+# =========================
+
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+
+
+# =========================
+# OS
+# =========================
+
+.DS_Store
+Thumbs.db

@@ -1,0 +1,793 @@
+/* =========================================================
+   FILE CARD
+   ========================================================= */
+
+.file-card {
+    width: 220px;
+    min-height: 250px;
+
+    background: #ffffff;
+    border-radius: 16px;
+
+    padding: 20px;
+
+    text-align: center;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    cursor: default;
+
+    position: relative;
+
+    overflow: visible;
+
+    box-sizing: border-box;
+
+    /* IMPORTANT:
+       No transform on hover.
+       This prevents the shaking/jumping effect.
+    */
+
+    transition: box-shadow 0.2s ease;
+}
+
+.file-card:hover {
+    transform: none;
+
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+
+/* =========================================================
+   THREE DOT MENU
+   ========================================================= */
+
+.menu-container {
+    position: absolute;
+
+    top: 10px;
+    right: 10px;
+
+    z-index: 50;
+}
+
+.menu-btn {
+    width: 34px;
+    height: 34px;
+
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 20px;
+
+    color: #555;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.menu-btn:hover {
+    background: #f1f3f4;
+    color: #111;
+}
+
+
+/* =========================================================
+   DROPDOWN MENU
+   ========================================================= */
+
+.file-menu {
+    position: absolute;
+
+    top: 38px;
+    right: 0;
+
+    width: 210px;
+
+    background: #ffffff;
+
+    border: 1px solid #e0e0e0;
+
+    border-radius: 10px;
+
+    padding: 6px 0;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.15);
+
+    z-index: 99999;
+
+    overflow: hidden;
+
+    text-align: left;
+
+    white-space: nowrap;
+
+    /* IMPORTANT:
+       prevents menu from affecting card size
+    */
+    box-sizing: border-box;
+}
+
+.file-menu button {
+    width: 100%;
+
+    min-height: 42px;
+
+    padding: 10px 15px;
+
+    border: none;
+
+    background: #ffffff;
+
+    color: #222;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    text-align: left;
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    box-sizing: border-box;
+
+    transition:
+        background 0.12s ease,
+        color 0.12s ease;
+}
+
+.file-menu button:hover {
+    background: #f3f4f6;
+    color: #111;
+}
+
+
+/* =========================================================
+   FILE ICON
+   ========================================================= */
+
+.file-icon {
+    width: 80px;
+    height: 80px;
+
+    margin: 10px auto 15px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    cursor: pointer;
+}
+
+.file-type-icon {
+    font-size: 70px;
+
+    transition: transform 0.2s ease;
+}
+
+.file-card:hover .file-type-icon {
+    transform: scale(1.05);
+}
+
+
+/* =========================================================
+   FILE COLORS
+   ========================================================= */
+
+.pdf {
+    color: #e53935;
+}
+
+.image {
+    color: #43a047;
+}
+
+.video {
+    color: #8e24aa;
+}
+
+.audio {
+    color: #ff9800;
+}
+
+.word {
+    color: #1565c0;
+}
+
+.excel {
+    color: #2e7d32;
+}
+
+.ppt {
+    color: #ef6c00;
+}
+
+.zip {
+    color: #6d4c41;
+}
+
+.default {
+    color: #607d8b;
+}
+
+
+/* =========================================================
+   IMAGE FILE
+   ========================================================= */
+
+.file-card img {
+    max-width: 100%;
+
+    height: auto;
+
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+   FILE NAME
+   ========================================================= */
+
+.file-card h4 {
+    margin: 10px 0;
+
+    color: #222;
+
+    font-size: 16px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   FILE SIZE
+   ========================================================= */
+
+.file-card p {
+    margin: 5px 0;
+
+    color: #666;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   OPEN BUTTON
+   ========================================================= */
+
+.open-btn {
+    margin-top: 10px;
+
+    width: 100%;
+
+    border: none;
+
+    padding: 10px;
+
+    border-radius: 8px;
+
+    background: #2563eb;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    transition:
+        background 0.15s ease;
+}
+
+.open-btn:hover {
+    background: #1d4ed8;
+}
+
+
+/* =========================================================
+   NORMAL RENAME
+   ========================================================= */
+
+.rename-box {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 6px;
+
+    margin-top: 10px;
+
+    width: 100%;
+
+    box-sizing: border-box;
+}
+
+.rename-box input {
+    width: 110px;
+
+    height: 30px;
+
+    padding: 4px 8px;
+
+    font-size: 12px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 6px;
+
+    outline: none;
+
+    box-sizing: border-box;
+}
+
+.rename-box input:focus {
+    border-color: #2563eb;
+}
+
+
+/* =========================================================
+   RENAME BUTTONS
+   ========================================================= */
+
+.save-rename-btn,
+.cancel-rename-btn {
+    width: 28px;
+    height: 28px;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+.save-rename-btn {
+    background: #22c55e;
+
+    color: white;
+}
+
+.cancel-rename-btn {
+    background: #ef4444;
+
+    color: white;
+}
+
+.save-rename-btn:hover,
+.cancel-rename-btn:hover {
+    transform: none;
+
+    opacity: 0.9;
+}
+
+
+/* =========================================================
+   ADD TO MY DRIVE
+   ========================================================= */
+
+.add-drive-btn {
+    width: 100%;
+
+    margin-top: 10px;
+
+    padding: 10px;
+
+    background: #16a34a;
+
+    color: white;
+
+    border: none;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease;
+}
+
+.add-drive-btn:hover {
+    background: #15803d;
+
+    transform: none;
+}
+
+.add-drive-btn:active {
+    transform: none;
+}
+
+
+/* =========================================================
+   AI RENAME OVERLAY
+   ========================================================= */
+
+.ai-rename-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    z-index: 999999;
+
+    box-sizing: border-box;
+
+    /* IMPORTANT:
+       no animation / transform
+       so it won't shake
+    */
+}
+
+
+/* =========================================================
+   AI RENAME MODAL
+   ========================================================= */
+
+.ai-rename-modal {
+    width: 430px;
+
+    max-width: calc(100vw - 40px);
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.25);
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+
+    position: relative;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   AI RENAME HEADER
+   ========================================================= */
+
+.ai-rename-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 22px;
+
+    border-bottom: 1px solid #eeeeee;
+
+    background: #ffffff;
+}
+
+.ai-rename-icon {
+    width: 48px;
+    height: 48px;
+
+    border-radius: 12px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 25px;
+
+    background: #f3f4f6;
+
+    flex-shrink: 0;
+}
+
+.ai-rename-header h2 {
+    margin: 0;
+
+    font-size: 20px;
+
+    color: #222;
+}
+
+.ai-rename-header p {
+    margin: 4px 0 0;
+
+    color: #777;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   AI RENAME BODY
+   ========================================================= */
+
+.ai-rename-body {
+    padding: 22px;
+}
+
+.ai-rename-body label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #444;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   CURRENT FILE NAME
+   ========================================================= */
+
+.ai-current-name {
+    width: 100%;
+
+    padding: 12px;
+
+    margin-bottom: 20px;
+
+    background: #f7f7f7;
+
+    border: 1px solid #e5e5e5;
+
+    border-radius: 8px;
+
+    color: #333;
+
+    font-size: 14px;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   AI SUGGESTED NAME
+   ========================================================= */
+
+.ai-suggested-input {
+    width: 100%;
+
+    height: 42px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #cfcfcf;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    color: #222;
+
+    box-sizing: border-box;
+}
+
+.ai-suggested-input:focus {
+    border-color: #2563eb;
+}
+
+
+/* =========================================================
+   AI HINT
+   ========================================================= */
+
+.ai-hint {
+    margin-top: 8px;
+
+    color: #777;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   AI LOADING
+   ========================================================= */
+
+.ai-loading {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 25px 10px;
+
+    text-align: center;
+}
+
+.ai-loading p {
+    margin-top: 12px;
+
+    color: #555;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   SPINNER
+   ========================================================= */
+
+.ai-spinner {
+    width: 34px;
+    height: 34px;
+
+    border: 4px solid #e5e7eb;
+
+    border-top: 4px solid #2563eb;
+
+    border-radius: 50%;
+
+    animation: ai-spin 0.8s linear infinite;
+}
+
+@keyframes ai-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   AI ERROR
+   ========================================================= */
+
+.ai-error {
+    padding: 12px;
+
+    background: #fef2f2;
+
+    border: 1px solid #fecaca;
+
+    border-radius: 8px;
+
+    color: #b91c1c;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   AI ACTION BUTTONS
+   ========================================================= */
+
+.ai-rename-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    padding: 16px 22px;
+
+    border-top: 1px solid #eeeeee;
+
+    background: #fafafa;
+}
+
+.ai-cancel-btn,
+.ai-confirm-btn {
+    padding: 10px 18px;
+
+    border-radius: 8px;
+
+    border: none;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    transition:
+        background 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.ai-cancel-btn {
+    background: #e5e7eb;
+
+    color: #333;
+}
+
+.ai-cancel-btn:hover {
+    background: #d1d5db;
+}
+
+.ai-confirm-btn {
+    background: #2563eb;
+
+    color: white;
+}
+
+.ai-confirm-btn:hover {
+    background: #1d4ed8;
+}
+
+.ai-cancel-btn:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   IMPORTANT
+   Prevent parent containers from clipping popup
+   ========================================================= */
+
+.files-grid {
+    overflow: visible;
+}
+
+.folders-grid {
+    overflow: visible;
+}
