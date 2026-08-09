@@ -2,6 +2,7 @@ package com.minidrive.minigoogledrive.model;
 
 import jakarta.persistence.*;
 import java.util.List;
+import jakarta.persistence.Column;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -13,9 +14,9 @@ public class User {
     private Long id;
     
     private String username;
+    
+
     @Column(unique = true)
-
-
     private String email;
 
     private String password;

@@ -1,15 +1,13 @@
 package com.minidrive.minigoogledrive.model;
 
-import jakarta.persistence.*; 
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 
 @Entity
 public class FileData {
@@ -35,9 +33,8 @@ public class FileData {
     private String shareToken;
 
     private boolean linkSharing = false;
-
-
-
+    private boolean hiddenFromRecent = false;
+    private boolean sharedSeen = false;
     @ManyToOne
     @JoinColumn(name = "user_id")
     @JsonIgnore
@@ -51,6 +48,9 @@ public class FileData {
     @ManyToMany
     private List<User> sharedUsers = new ArrayList<>();
 
+    @ManyToMany
+    private List<User> viewedBy = new ArrayList<>();
+
     public List<User> getSharedUsers() {
         return sharedUsers;
     }
@@ -59,6 +59,13 @@ public class FileData {
         this.sharedUsers = sharedUsers;
     }
 
+    public List<User> getViewedBy() {
+        return viewedBy;
+    }
+
+    public void setViewedBy(List<User> viewedBy) {
+        this.viewedBy = viewedBy;
+    }
 
     public FileData() {
     }
@@ -118,6 +125,7 @@ public class FileData {
     public void setUser(User user) {
         this.user = user;
     }
+
     public Folder getFolder() {
         return folder;
     }
@@ -125,6 +133,7 @@ public class FileData {
     public void setFolder(Folder folder) {
         this.folder = folder;
     }
+
     public boolean isDeleted() {
         return deleted;
     }
@@ -132,6 +141,7 @@ public class FileData {
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
     }
+
     public boolean isStarred() {
         return starred;
     }
@@ -139,6 +149,7 @@ public class FileData {
     public void setStarred(boolean starred) {
         this.starred = starred;
     }
+
     public LocalDateTime getLastAccessed() {
         return lastAccessed;
     }
@@ -146,6 +157,7 @@ public class FileData {
     public void setLastAccessed(LocalDateTime lastAccessed) {
         this.lastAccessed = lastAccessed;
     }
+
     public String getShareToken() {
         return shareToken;
     }
@@ -154,12 +166,27 @@ public class FileData {
         this.shareToken = shareToken;
     }
 
-
     public boolean isLinkSharing() {
         return linkSharing;
     }
 
     public void setLinkSharing(boolean linkSharing) {
         this.linkSharing = linkSharing;
+    }
+
+    public boolean isHiddenFromRecent() {
+        return hiddenFromRecent;
+    }
+
+    public void setHiddenFromRecent(boolean hiddenFromRecent) {
+        this.hiddenFromRecent = hiddenFromRecent;
+    }
+
+    public boolean isSharedSeen() {
+        return sharedSeen;
+    }
+
+    public void setSharedSeen(boolean sharedSeen) {
+        this.sharedSeen = sharedSeen;
     }
 }

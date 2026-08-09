@@ -26,7 +26,19 @@ public class UserController {
 
         return userService.loginUser(
                 loginRequest.getEmail(),
-                loginRequest.getPassword()
-        );
+                loginRequest.getPassword());
     }
+
+    @PostMapping("/google-login")
+    public String googleLogin(@RequestBody java.util.Map<String, String> request) {
+
+        String credential = request.get("credential");
+
+        if (credential == null || credential.isEmpty()) {
+            throw new RuntimeException("Google credential missing");
+        }
+
+        return userService.googleLogin(credential);
+    }
+
 }

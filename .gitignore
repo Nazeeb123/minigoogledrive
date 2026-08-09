@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+# Uploaded files
+uploads/
+
+# Environment / secrets
+.env
+*.env
+
+# Logs
+*.log

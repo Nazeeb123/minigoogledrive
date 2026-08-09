@@ -15,63 +15,101 @@ import java.util.List;
 @Service
 public class FolderService {
 
-    @Autowired
-    private FolderRepository folderRepository;
+        @Autowired
+        private FolderRepository folderRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+        @Autowired
+        private UserRepository userRepository;
 
+        // Create Folder
+        public Folder createFolder(String folderName) {
 
-    // Create Folder
-    public Folder createFolder(String folderName) {
+                String email = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+                                .getName();
 
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String email = SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getName();
+                Folder folder = new Folder();
 
+                folder.setFolderName(folderName);
+                folder.setCreatedDate(LocalDateTime.now());
+                folder.setUser(user);
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                return folderRepository.save(folder);
+        }
 
+        // Get My Folders
+        public List<Folder> getMyFolders() {
 
-        Folder folder = new Folder();
+                String email = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+                                .getName();
 
-        folder.setFolderName(folderName);
-        folder.setCreatedDate(LocalDateTime.now());
-        folder.setUser(user);
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
+                List<Folder> folders = folderRepository.findByUser(user);
 
-        return folderRepository.save(folder);
-    }
+                for (Folder folder : folders) {
 
+                        folder.setFiles(
+                                        folder.getFiles()
+                                                        .stream()
+                                                        .filter(file -> !file.isDeleted())
+                                                        .toList());
 
+                }
 
-    // Get My Folders
-    public List<Folder> getMyFolders() {
+                return folders;
+        }
 
+        // Delete Folder
+        public String deleteFolder(Long id) {
 
-        String email = SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getName();
+                Folder folder = folderRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Folder not found"));
 
+                folderRepository.delete(folder);
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                return "Folder deleted successfully";
+        }
 
+        public List<Folder> searchFolders(String keyword) {
 
-        return folderRepository.findByUser(user);
-    }
-    // Delete Folder
-    public String deleteFolder(Long id) {
+                String email = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+                                .getName();
 
-        Folder folder = folderRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Folder not found"));
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        folderRepository.delete(folder);
+                return folderRepository
+                                .findByUserAndFolderNameContainingIgnoreCase(user, keyword);
 
-     return "Folder deleted successfully";
-    }
+        }
+
+        public Folder getFolderById(Long id) {
+
+                String email = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+                                .getName();
+
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
+
+                Folder folder = folderRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Folder not found"));
+
+                if (!folder.getUser().getId().equals(user.getId())) {
+                        throw new RuntimeException("You cannot access this folder");
+                }
+
+                return folder;
+        }
 }

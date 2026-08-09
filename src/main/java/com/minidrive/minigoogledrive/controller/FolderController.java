@@ -15,13 +15,10 @@ import java.util.List;
 @RequestMapping("/folders")
 public class FolderController {
 
-
     @Autowired
     private FolderService folderService;
     @Autowired
     private FileDataService fileDataService;
-   
-
 
     // Create folder
     @PostMapping("/create")
@@ -29,29 +26,24 @@ public class FolderController {
             @RequestParam String folderName) {
 
         return ResponseEntity.ok(
-                folderService.createFolder(folderName)
-        );
+                folderService.createFolder(folderName));
     }
-
 
     // Get all folders
-    @GetMapping
+    @GetMapping("/my")
     public ResponseEntity<List<Folder>> getFolders() {
-
         return ResponseEntity.ok(
-                folderService.getMyFolders()
-        );
+                folderService.getMyFolders());
     }
+
     // Get all files inside a folder
     @GetMapping("/{id}/files")
     public ResponseEntity<List<FileData>> getFilesInFolder(
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-            fileDataService.getFilesInFolder(id)
-        );
+                fileDataService.getFilesInFolder(id));
     }
-
 
     // Delete folder
     @DeleteMapping("/{id}")
@@ -59,8 +51,7 @@ public class FolderController {
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                folderService.deleteFolder(id)
-        );
+                folderService.deleteFolder(id));
     }
 
 }
