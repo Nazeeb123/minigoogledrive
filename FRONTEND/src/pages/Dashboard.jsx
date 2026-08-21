@@ -2,8 +2,8 @@ import "./Dashboard.css";
 import { useEffect, useState, useRef } from "react";
 
 import FileUpload from "../components/FileUpload";
-import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
+import Sidebar from "../components/SideBar";
+import Navbar from "../components/NavBar";
 import API from "../services/api";
 import FolderCard from "../components/FolderCard";
 import FileCard from "../components/FileCard";

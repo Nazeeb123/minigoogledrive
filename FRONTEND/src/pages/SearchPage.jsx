@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import API from "../services/api";
 import SearchResults from "../components/SearchResults";
-import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
+import Sidebar from "../components/SideBar";
+import Navbar from "../components/NavBar";
 
 function SearchPage() {
 

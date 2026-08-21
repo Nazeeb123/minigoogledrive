@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../services/api";
 import Navbar from "../components/NavBar";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/SideBar";
 import FileCard from "../components/FileCard";
 import "./Dashboard.css";
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../services/api";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import Navbar from "../components/NavBar";
+import Sidebar from "../components/SideBar";
 import FileCard from "../components/FileCard";
 import ShareBox from "../components/ShareBox";
 import "./Dashboard.css";

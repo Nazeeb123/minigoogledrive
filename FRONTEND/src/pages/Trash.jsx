@@ -1,4 +1,4 @@
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/SideBar";
 import FileCard from "../components/FileCard";
 import { useEffect, useState } from "react";
 import API from "../services/api";

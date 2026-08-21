@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { FaSearch, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import "./Navbar.css";
+import "./NavBar.css";
 
 function Navbar({
   search,

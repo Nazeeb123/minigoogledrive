@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
+import Sidebar from "../components/SideBar";
+import Navbar from "../components/NavBar";
 import FileCard from "../components/FileCard";
 import API from "../services/api";
 import "./Dashboard.css";
