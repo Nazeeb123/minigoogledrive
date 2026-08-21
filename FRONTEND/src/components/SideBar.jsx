@@ -1,4 +1,4 @@
-import "./Sidebar.css";
+import "./SideBar.css";
 import { FaFolder, FaStar, FaTrash, FaUsers, FaRobot } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
