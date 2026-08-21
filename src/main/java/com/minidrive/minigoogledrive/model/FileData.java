@@ -16,6 +16,8 @@ public class FileData {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long originalFileId;
+
     private String fileName;
 
     private String filePath;
@@ -44,6 +46,9 @@ public class FileData {
     @JoinColumn(name = "folder_id")
     @JsonBackReference
     private Folder folder;
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String embedding;
 
     @ManyToMany
     private List<User> sharedUsers = new ArrayList<>();
@@ -188,5 +193,30 @@ public class FileData {
 
     public void setSharedSeen(boolean sharedSeen) {
         this.sharedSeen = sharedSeen;
+    }
+
+    public String getLocation() {
+
+        if (folder == null) {
+            return "My Drive";
+        }
+
+        return "My Drive / " + folder.getFolderName();
+    }
+
+    public Long getOriginalFileId() {
+        return originalFileId;
+    }
+
+    public void setOriginalFileId(Long originalFileId) {
+        this.originalFileId = originalFileId;
+    }
+
+    public String getEmbedding() {
+        return embedding;
+    }
+
+    public void setEmbedding(String embedding) {
+        this.embedding = embedding;
     }
 }

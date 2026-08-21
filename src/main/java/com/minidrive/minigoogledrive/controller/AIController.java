@@ -1,533 +1,339 @@
-
 package com.minidrive.minigoogledrive.controller;
 
-import com.minidrive.minigoogledrive.model.ChatMessage;
 import com.minidrive.minigoogledrive.model.FileData;
 import com.minidrive.minigoogledrive.service.ChatService;
 import com.minidrive.minigoogledrive.service.FileDataService;
+import com.minidrive.minigoogledrive.service.FileTextService;
 import com.minidrive.minigoogledrive.service.OpenAIService;
-import com.minidrive.minigoogledrive.service.OllamaService;
-import net.sourceforge.tess4j.Tesseract;
+import com.minidrive.minigoogledrive.service.OpenRouterService;
+import com.minidrive.minigoogledrive.service.RagService;
 
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
-
-import org.apache.poi.hwpf.HWPFDocument;
-import org.apache.poi.hwpf.extractor.WordExtractor;
-
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-
-import java.util.Map;
-
-import javax.imageio.ImageIO;
 import java.nio.file.Files;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/ai")
 public class AIController {
 
-    private final OpenAIService openAIService;
-    private final FileDataService fileDataService;
-    private final ChatService chatService;
-    private final OllamaService ollamaService;
+        private final OpenAIService openAIService;
+        private final FileTextService fileTextService;
+        private final FileDataService fileDataService;
+        private final ChatService chatService;
+        private final OpenRouterService openRouterService;
+        private final RagService ragService;
 
-    public AIController(
-            OpenAIService openAIService,
-            FileDataService fileDataService,
-            ChatService chatService,
-            OllamaService ollamaService) {
+        public AIController(
+                        OpenAIService openAIService,
+                        FileDataService fileDataService,
+                        ChatService chatService,
+                        OpenRouterService openRouterService,
+                        FileTextService fileTextService,
+                        RagService ragService) {
 
-        this.openAIService = openAIService;
-        this.fileDataService = fileDataService;
-        this.chatService = chatService;
-        this.ollamaService = ollamaService;
-    }
-    // =========================
-    // NORMAL AI
-    // =========================
-
-    @PostMapping("/ask")
-    public String askAI(
-            @RequestBody Map<String, String> request) {
-
-        String question = request.get("question");
-
-        return openAIService.askAI(question);
-    }
-
-    // =========================
-    // CHAT WITH FILE
-    // =========================
-
-    @PostMapping("/file-ask")
-    public Map<String, String> askAboutFile(
-            @RequestBody Map<String, Object> request) {
-
-        System.out.println("AI FILE REQUEST: " + request);
-
-        // =========================
-        // GET QUESTION
-        // =========================
-
-        Object questionObject = request.get("question");
-
-        if (questionObject == null) {
-            throw new RuntimeException("Question is missing from request");
+                this.openAIService = openAIService;
+                this.fileDataService = fileDataService;
+                this.chatService = chatService;
+                this.openRouterService = openRouterService;
+                this.fileTextService = fileTextService;
+                this.ragService = ragService;
         }
 
-        String question = String.valueOf(questionObject).trim();
+        // =========================================================
+        // NORMAL AI
+        // =========================================================
 
-        if (question.isEmpty()) {
-            throw new RuntimeException("Question cannot be empty");
-        }
+        @PostMapping("/ask")
+        public String askAI(
+                        @RequestBody Map<String, String> request) {
 
-        // =========================
-        // GET FILE ID
-        // =========================
+                String question = request.get("question");
 
-        Object fileIdObject = request.get("fileId");
-
-        System.out.println("QUESTION: " + question);
-        System.out.println("FILE ID OBJECT: " + fileIdObject);
-
-        if (fileIdObject == null) {
-            throw new RuntimeException("fileId is missing from request");
-        }
-
-        Long fileId;
-
-        try {
-
-            if (fileIdObject instanceof Number) {
-
-                fileId = ((Number) fileIdObject).longValue();
-
-            } else {
-
-                String fileIdString = String.valueOf(fileIdObject).trim();
-
-                if (fileIdString.isEmpty()
-                        || fileIdString.equalsIgnoreCase("null")) {
-
-                    throw new RuntimeException(
-                            "fileId is null or empty");
+                if (question == null || question.trim().isEmpty()) {
+                        throw new RuntimeException(
+                                        "Question cannot be empty");
                 }
 
-                fileId = Long.parseLong(fileIdString);
-            }
-
-        } catch (NumberFormatException e) {
-
-            throw new RuntimeException(
-                    "Invalid fileId: " + fileIdObject);
+                return openRouterService.askAI(question);
         }
 
-        // =========================
-        // GET FILE
-        // =========================
+        // =========================================================
+        // CHAT WITH FILE
+        // PDF / DOC / DOCX / TXT
+        // =========================================================
 
-        try {
+        @PostMapping("/file-ask")
+        public Map<String, String> askAboutFile(
+                        @RequestBody Map<String, Object> request) {
 
-            FileData fileData = fileDataService.getFileForAI(fileId);
+                long startTime = System.currentTimeMillis();
 
-            System.out.println(
-                    "AI FILE NAME: " +
-                            fileData.getFileName());
+                try {
 
-            System.out.println(
-                    "AI FILE PATH: " +
-                            fileData.getFilePath());
+                        // -----------------------------------------------------
+                        // QUESTION
+                        // -----------------------------------------------------
 
-            // =========================
-            // EXTRACT FILE CONTENT
-            // =========================
+                        Object questionObject = request.get("question");
 
-            String content = extractText(fileData);
+                        if (questionObject == null) {
+                                throw new RuntimeException(
+                                                "Question is missing");
+                        }
 
-            if (content == null
-                    || content.trim().isEmpty()) {
+                        String question = String.valueOf(questionObject).trim();
 
-                return Map.of(
-                        "answer",
-                        "I could not extract readable text from this file.");
-            }
+                        if (question.isEmpty()) {
+                                throw new RuntimeException(
+                                                "Question cannot be empty");
+                        }
 
-            // Prevent sending extremely large files
-            if (content.length() > 50000) {
+                        // -----------------------------------------------------
+                        // FILE ID
+                        // -----------------------------------------------------
 
-                content = content.substring(0, 50000);
-            }
+                        Object fileIdObject = request.get("fileId");
 
-            // =========================
-            // ASK OLLAMA
-            // =========================
+                        if (fileIdObject == null) {
+                                throw new RuntimeException(
+                                                "fileId is missing");
+                        }
 
-            String answer = ollamaService.askAboutFile(
-                    question,
-                    fileData.getFileName(),
-                    content);
+                        Long fileId = Long.parseLong(
+                                        String.valueOf(fileIdObject));
 
-            return Map.of(
-                    "answer",
-                    answer);
+                        // -----------------------------------------------------
+                        // GET FILE
+                        // -----------------------------------------------------
 
-        } catch (Exception e) {
+                        FileData fileData = fileDataService.getFileForAI(fileId);
 
-            e.printStackTrace();
+                        if (fileData == null) {
+                                throw new RuntimeException(
+                                                "File not found");
+                        }
 
-            throw new RuntimeException(
-                    "Could not process file: "
-                            + e.getMessage(),
-                    e);
-        }
-    }
+                        System.out.println(
+                                        "=================================");
 
-    // =========================
-    // EXTRACT FILE TEXT
-    // =========================
+                        System.out.println(
+                                        "RAG FILE ASK");
 
-    private String extractText(FileData fileData) {
+                        System.out.println(
+                                        "FILE: "
+                                                        + fileData.getFileName());
 
-        String path = fileData.getFilePath();
+                        System.out.println(
+                                        "QUESTION: "
+                                                        + question);
 
-        String fileType = fileData.getFileType();
+                        System.out.println(
+                                        "=================================");
 
-        File file = new File(path);
+                        // -----------------------------------------------------
+                        // IMAGE PROTECTION
+                        // -----------------------------------------------------
 
-        System.out.println(
-                "AI FILE PATH: " + path);
+                        /*
+                         * Images MUST NOT go through normal RAG.
+                         *
+                         * Image questions are handled by /image-ask.
+                         *
+                         * This prevents OCR/RAG from incorrectly treating
+                         * a gaming logo or normal photograph as a document.
+                         */
 
-        System.out.println(
-                "AI FILE TYPE: " + fileType);
+                        String fileType = fileData.getFileType();
 
-        System.out.println(
-                "AI FILE EXISTS: " + file.exists());
+                        if (fileType != null &&
+                                        fileType.startsWith("image/")) {
 
-        // =========================
-        // PDF
-        // =========================
+                                throw new RuntimeException(
+                                                "This is an image. Please use the image analysis endpoint.");
+                        }
 
-        if ("application/pdf".equalsIgnoreCase(fileType)) {
+                        // -----------------------------------------------------
+                        // RAG
+                        // -----------------------------------------------------
 
-            try (PDDocument document = Loader.loadPDF(file)) {
+                        String answer = ragService.askAboutFile(
+                                        fileData,
+                                        question);
 
-                PDFTextStripper stripper = new PDFTextStripper();
+                        long elapsed = System.currentTimeMillis()
+                                        - startTime;
 
-                return stripper.getText(document);
+                        System.out.println(
+                                        "RAG RESPONSE TIME: "
+                                                        + elapsed
+                                                        + " ms");
 
-            } catch (IOException e) {
+                        return Map.of(
+                                        "answer",
+                                        answer);
 
-                throw new RuntimeException(
-                        "Could not read PDF file",
-                        e);
-            }
-        }
+                } catch (Exception e) {
 
-        // =========================
-        // DOCX
-        // =========================
+                        e.printStackTrace();
 
-        if ("application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                .equalsIgnoreCase(fileType)) {
-
-            try (
-                    FileInputStream input = new FileInputStream(file);
-
-                    XWPFDocument document = new XWPFDocument(input)) {
-
-                StringBuilder text = new StringBuilder();
-
-                document.getParagraphs()
-                        .forEach(paragraph -> text.append(
-                                paragraph.getText()).append("\n"));
-
-                return text.toString();
-
-            } catch (IOException e) {
-
-                throw new RuntimeException(
-                        "Could not read DOCX file",
-                        e);
-            }
-        }
-
-        // =========================
-        // DOC
-        // =========================
-
-        if ("application/msword"
-                .equalsIgnoreCase(fileType)) {
-
-            try (
-                    FileInputStream input = new FileInputStream(file);
-
-                    HWPFDocument document = new HWPFDocument(input);
-
-                    WordExtractor extractor = new WordExtractor(document)) {
-
-                return extractor.getText();
-
-            } catch (IOException e) {
-
-                throw new RuntimeException(
-                        "Could not read DOC file",
-                        e);
-            }
-        }
-
-        // =========================
-        // TXT
-        // =========================
-
-        // =========================
-        // TXT
-        // =========================
-
-        if ("text/plain".equalsIgnoreCase(fileType)) {
-
-            try {
-
-                System.out.println("READING TXT FILE...");
-                System.out.println("TXT ABSOLUTE PATH: " + file.getAbsolutePath());
-                System.out.println("TXT FILE EXISTS: " + file.exists());
-                System.out.println("TXT FILE SIZE: " + file.length());
-
-                if (!file.exists()) {
-                    throw new RuntimeException(
-                            "TXT file does not exist: "
-                                    + file.getAbsolutePath());
+                        throw new RuntimeException(
+                                        "Could not process RAG question: "
+                                                        + e.getMessage(),
+                                        e);
                 }
-
-                if (file.length() == 0) {
-                    return "";
-                }
-
-                byte[] bytes = Files.readAllBytes(file.toPath());
-
-                System.out.println(
-                        "TXT BYTES READ: " + bytes.length);
-
-                // UTF-8 BOM
-                if (bytes.length >= 3
-                        && (bytes[0] & 0xFF) == 0xEF
-                        && (bytes[1] & 0xFF) == 0xBB
-                        && (bytes[2] & 0xFF) == 0xBF) {
-
-                    return new String(
-                            bytes,
-                            3,
-                            bytes.length - 3,
-                            java.nio.charset.StandardCharsets.UTF_8);
-                }
-
-                // UTF-8
-                String text = new String(
-                        bytes,
-                        java.nio.charset.StandardCharsets.UTF_8);
-
-                // If UTF-8 decoded correctly
-                if (!text.contains("\uFFFD")) {
-                    return text;
-                }
-
-                // Windows encoding fallback
-                return new String(
-                        bytes,
-                        java.nio.charset.Charset.forName(
-                                "Windows-1252"));
-
-            } catch (Exception e) {
-
-                e.printStackTrace();
-
-                throw new RuntimeException(
-                        "Could not read TXT file: "
-                                + e.getMessage(),
-                        e);
-            }
         }
-        // =========================
+
+        // =========================================================
+        // IMAGE ANALYSIS
         // JPG / JPEG / PNG
-        // =========================
+        // =========================================================
 
-        if ("image/jpeg".equalsIgnoreCase(fileType)
-                || "image/jpg".equalsIgnoreCase(fileType)
-                || "image/png".equalsIgnoreCase(fileType)) {
+        @PostMapping(value = "/image-ask", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        public Map<String, String> askAboutImage(
+                        @RequestParam("fileId") Long fileId,
+                        @RequestParam("question") String question) {
 
-            return extractImageText(file);
+                long startTime = System.currentTimeMillis();
+
+                try {
+
+                        // -------------------------------------------------
+                        // VALIDATE QUESTION
+                        // -------------------------------------------------
+
+                        if (question == null ||
+                                        question.trim().isEmpty()) {
+
+                                throw new RuntimeException(
+                                                "Question cannot be empty");
+                        }
+
+                        // -------------------------------------------------
+                        // GET FILE
+                        // -------------------------------------------------
+
+                        FileData fileData = fileDataService.getFileForAI(fileId);
+
+                        if (fileData == null) {
+
+                                throw new RuntimeException(
+                                                "Image file not found");
+                        }
+
+                        System.out.println(
+                                        "=================================");
+
+                        System.out.println(
+                                        "IMAGE AI");
+
+                        System.out.println(
+                                        "FILE: "
+                                                        + fileData.getFileName());
+
+                        System.out.println(
+                                        "QUESTION: "
+                                                        + question);
+
+                        System.out.println(
+                                        "=================================");
+
+                        // -------------------------------------------------
+                        // FILE TYPE
+                        // -------------------------------------------------
+
+                        String mimeType = fileData.getFileType();
+
+                        if (mimeType == null ||
+                                        !mimeType.startsWith("image/")) {
+
+                                throw new RuntimeException(
+                                                "Selected file is not an image");
+                        }
+
+                        // -------------------------------------------------
+                        // RESOLVE PATH
+                        // -------------------------------------------------
+
+                        File file = new File(fileData.getFilePath());
+
+                        if (!file.isAbsolute()) {
+
+                                file = new File(
+                                                System.getProperty("user.dir"),
+                                                fileData.getFilePath());
+                        }
+
+                        System.out.println(
+                                        "IMAGE PATH: "
+                                                        + file.getAbsolutePath());
+
+                        // -------------------------------------------------
+                        // CHECK FILE
+                        // -------------------------------------------------
+
+                        if (!file.exists()) {
+
+                                throw new RuntimeException(
+                                                "Image file does not exist: "
+                                                                + file.getAbsolutePath());
+                        }
+
+                        if (!file.isFile()) {
+
+                                throw new RuntimeException(
+                                                "Selected path is not a file");
+                        }
+
+                        // -------------------------------------------------
+                        // READ IMAGE
+                        // -------------------------------------------------
+
+                        byte[] imageBytes = Files.readAllBytes(
+                                        file.toPath());
+
+                        if (imageBytes.length == 0) {
+
+                                throw new RuntimeException(
+                                                "Image file is empty");
+                        }
+
+                        System.out.println(
+                                        "IMAGE SIZE: "
+                                                        + imageBytes.length
+                                                        + " bytes");
+
+                        // -------------------------------------------------
+                        // VISION MODEL
+                        // -------------------------------------------------
+
+                        String answer = openRouterService.askAboutImage(
+                                        question,
+                                        imageBytes,
+                                        mimeType);
+
+                        long elapsed = System.currentTimeMillis()
+                                        - startTime;
+
+                        System.out.println(
+                                        "IMAGE RESPONSE TIME: "
+                                                        + elapsed
+                                                        + " ms");
+
+                        return Map.of(
+                                        "answer",
+                                        answer);
+
+                } catch (Exception e) {
+
+                        e.printStackTrace();
+
+                        throw new RuntimeException(
+                                        "Could not analyze image: "
+                                                        + e.getMessage(),
+                                        e);
+                }
         }
-
-        // =========================
-        // UNKNOWN FILE TYPE
-        // =========================
-
-        return "";
-    }
-
-    // =========================
-    // OCR IMAGE
-    // =========================
-
-    private String extractImageText(File file) {
-
-        try {
-
-            BufferedImage image = ImageIO.read(file);
-
-            if (image == null) {
-                throw new RuntimeException(
-                        "Could not load image.");
-            }
-
-            Tesseract tesseract = new Tesseract();
-
-            // Tesseract installation directory
-            String tessdataPath = "C:/Program Files/Tesseract-OCR/tessdata";
-
-            File tessdataFolder = new File(tessdataPath);
-
-            if (!tessdataFolder.exists()) {
-                throw new RuntimeException(
-                        "Tesseract tessdata folder not found: "
-                                + tessdataPath);
-            }
-
-            // Check English language data
-            File englishData = new File(
-                    tessdataFolder,
-                    "eng.traineddata");
-
-            if (!englishData.exists()) {
-                throw new RuntimeException(
-                        "Tesseract English language file not found: "
-                                + englishData.getAbsolutePath());
-            }
-
-            tesseract.setDatapath(tessdataPath);
-            tesseract.setLanguage("eng");
-
-            return tesseract.doOCR(image);
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            throw new RuntimeException(
-                    "Could not read image using OCR: "
-                            + e.getMessage(),
-                    e);
-        }
-    }
-    // =========================
-    // AI AUTO RENAME
-    // =========================
-
-    @PostMapping("/rename")
-    public Map<String, String> aiRename(
-            @RequestBody Map<String, Object> request) {
-
-        Object fileIdObject = request.get("fileId");
-
-        if (fileIdObject == null) {
-            throw new RuntimeException("fileId is missing");
-        }
-
-        Long fileId;
-
-        try {
-            fileId = Long.parseLong(
-                    String.valueOf(fileIdObject));
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Invalid fileId");
-        }
-
-        FileData fileData = fileDataService.getFileForAI(fileId);
-
-        String content = extractText(fileData);
-
-        if (content == null || content.trim().isEmpty()) {
-
-            throw new RuntimeException(
-                    "Could not extract readable text from this file");
-        }
-
-        // Don't send an unnecessarily huge document
-        if (content.length() > 15000) {
-            content = content.substring(0, 15000);
-        }
-
-        String extension = "";
-
-        String originalName = fileData.getFileName();
-
-        int dotIndex = originalName.lastIndexOf(".");
-
-        if (dotIndex > 0) {
-            extension = originalName.substring(dotIndex);
-        }
-
-        String prompt = "You are an AI file naming assistant inside a Google Drive application.\n\n"
-                + "Analyze the following file content and suggest ONE professional, "
-                + "descriptive filename.\n\n"
-
-                + "ORIGINAL FILE NAME:\n"
-                + originalName
-                + "\n\n"
-
-                + "FILE CONTENT:\n"
-                + content
-                + "\n\n"
-
-                + "RULES:\n"
-                + "1. Give only the new filename.\n"
-                + "2. Do not give explanations.\n"
-                + "3. Do not use quotes.\n"
-                + "4. Do not include the file extension.\n"
-                + "5. Keep the name concise and professional.\n"
-                + "6. Use words that describe the actual content.\n";
-
-        String aiName = ollamaService.askAI(prompt);
-
-        // Clean Ollama response
-        aiName = aiName.trim();
-
-        aiName = aiName
-                .replace("\"", "")
-                .replace("'", "")
-                .replace("\n", " ")
-                .replace("\r", " ")
-                .trim();
-
-        // Remove accidental extension from AI response
-        int aiDotIndex = aiName.lastIndexOf(".");
-
-        if (aiDotIndex > 0) {
-
-            String possibleExtension = aiName.substring(aiDotIndex);
-
-            if (possibleExtension.length() <= 10) {
-                aiName = aiName.substring(
-                        0,
-                        aiDotIndex);
-            }
-        }
-
-        String finalName = aiName + extension;
-
-        return Map.of(
-                "originalName",
-                originalName,
-
-                "suggestedName",
-                finalName);
-    }
-
 }

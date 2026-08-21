@@ -4,6 +4,7 @@ import com.minidrive.minigoogledrive.model.Chat;
 import com.minidrive.minigoogledrive.model.ChatMessage;
 import com.minidrive.minigoogledrive.repository.ChatMessageRepository;
 import com.minidrive.minigoogledrive.repository.ChatRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,146 +14,272 @@ import java.util.List;
 @Service
 public class ChatService {
 
-    private final ChatRepository chatRepository;
-    private final ChatMessageRepository chatMessageRepository;
-    private final OllamaService ollamaService;
+        private final ChatRepository chatRepository;
+        private final ChatMessageRepository chatMessageRepository;
+        private final OpenRouterService openRouterService;
+        private final MemoryService memoryService;
 
-    public ChatService(
-            ChatRepository chatRepository,
-            ChatMessageRepository chatMessageRepository,
-            OllamaService ollamaService) {
-        this.chatRepository = chatRepository;
-        this.chatMessageRepository = chatMessageRepository;
-        this.ollamaService = ollamaService;
-    }
+        public ChatService(
+                        ChatRepository chatRepository,
+                        ChatMessageRepository chatMessageRepository,
+                        OpenRouterService openRouterService,
+                        MemoryService memoryService) {
 
-    // Create a new chat
-    public Chat createChat(String userEmail, String title) {
-
-        if (title == null || title.trim().isEmpty()) {
-            title = "New Chat";
+                this.chatRepository = chatRepository;
+                this.chatMessageRepository = chatMessageRepository;
+                this.openRouterService = openRouterService;
+                this.memoryService = memoryService;
         }
 
-        Chat chat = new Chat(userEmail, title);
+        // =========================================================
+        // CREATE CHAT
+        // =========================================================
 
-        return chatRepository.save(chat);
-    }
+        public Chat createChat(
+                        String userEmail,
+                        String title) {
 
-    // Get all chats of logged-in user
-    public List<Chat> getUserChats(String userEmail) {
+                if (title == null || title.trim().isEmpty()) {
+                        title = "New Chat";
+                }
 
-        return chatRepository.findByUserEmailOrderByUpdatedAtDesc(userEmail);
-    }
+                Chat chat = new Chat(
+                                userEmail,
+                                title);
 
-    // Get messages of one chat
-    public List<ChatMessage> getMessages(
-            Long chatId,
-            String userEmail) {
-
-        Chat chat = chatRepository
-                .findByIdAndUserEmail(chatId, userEmail)
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
-
-        return chatMessageRepository
-                .findByChatIdOrderByCreatedAtAsc(chat.getId());
-    }
-
-    // Ask AI and save conversation
-    public ChatMessage askAI(
-            Long chatId,
-            String userEmail,
-            String question) {
-
-        Chat chat = chatRepository
-                .findByIdAndUserEmail(chatId, userEmail)
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
-
-        if (question == null || question.trim().isEmpty()) {
-            throw new RuntimeException("Question cannot be empty");
+                return chatRepository.save(chat);
         }
 
-        // Ask Ollama
-        String answer = ollamaService.askAI(question);
+        // =========================================================
+        // GET USER CHATS
+        // =========================================================
 
-        // Save question + answer
-        ChatMessage message = new ChatMessage(chat, question, answer);
+        public List<Chat> getUserChats(
+                        String userEmail) {
 
-        ChatMessage savedMessage = chatMessageRepository.save(message);
-
-        // Update chat timestamp
-        chat.setUpdatedAt(LocalDateTime.now());
-
-        chatRepository.save(chat);
-
-        return savedMessage;
-    }
-
-    // Ask AI about a file and save conversation
-    public ChatMessage askAboutFile(
-            Long chatId,
-            String userEmail,
-            String question,
-            String fileName,
-            String content) {
-
-        Chat chat = chatRepository
-                .findByIdAndUserEmail(chatId, userEmail)
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
-
-        if (question == null || question.trim().isEmpty()) {
-            throw new RuntimeException("Question cannot be empty");
+                return chatRepository
+                                .findByUserEmailOrderByUpdatedAtDesc(userEmail);
         }
 
-        // Ask Ollama about the file
-        String answer = ollamaService.askAboutFile(
-                question,
-                fileName,
-                content);
+        // =========================================================
+        // GET CHAT MESSAGES
+        // =========================================================
 
-        // Save question + answer
-        ChatMessage message = new ChatMessage(
-                chat,
-                question,
-                answer);
+        public List<ChatMessage> getMessages(
+                        Long chatId,
+                        String userEmail) {
 
-        ChatMessage savedMessage = chatMessageRepository.save(message);
+                Chat chat = chatRepository
+                                .findByIdAndUserEmail(
+                                                chatId,
+                                                userEmail)
+                                .orElseThrow(() -> new RuntimeException("Chat not found"));
 
-        // Update chat timestamp
-        chat.setUpdatedAt(LocalDateTime.now());
+                return chatMessageRepository
+                                .findByChatIdOrderByCreatedAtAsc(
+                                                chat.getId());
+        }
 
-        chatRepository.save(chat);
+        // =========================================================
+        // NORMAL AI CHAT
+        // =========================================================
 
-        return savedMessage;
-    }
+        public ChatMessage askAI(
+                        Long chatId,
+                        String userEmail,
+                        String question) {
 
-    // Delete complete chat
-    @Transactional
-    public void deleteChat(
-            Long chatId,
-            String userEmail) {
+                Chat chat = chatRepository
+                                .findByIdAndUserEmail(
+                                                chatId,
+                                                userEmail)
+                                .orElseThrow(() -> new RuntimeException("Chat not found"));
 
-        Chat chat = chatRepository
-                .findByIdAndUserEmail(chatId, userEmail)
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
+                if (question == null ||
+                                question.trim().isEmpty()) {
 
-        chatMessageRepository.deleteByChatId(chat.getId());
+                        throw new RuntimeException(
+                                        "Question cannot be empty");
+                }
 
-        chatRepository.delete(chat);
-    }
+                // =====================================================
+                // GET PREVIOUS CONVERSATION
+                // =====================================================
 
-    // Rename chat
-    public Chat renameChat(
-            Long chatId,
-            String userEmail,
-            String title) {
+                List<ChatMessage> previousMessages = chatMessageRepository
+                                .findByChatIdOrderByCreatedAtAsc(
+                                                chat.getId());
 
-        Chat chat = chatRepository
-                .findByIdAndUserEmail(chatId, userEmail)
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
+                // =====================================================
+                // BUILD CONVERSATION
+                // =====================================================
 
-        chat.setTitle(title);
-        chat.setUpdatedAt(LocalDateTime.now());
+                StringBuilder conversation = new StringBuilder();
 
-        return chatRepository.save(chat);
-    }
+                String memoryContext = memoryService.buildMemoryContext(userEmail);
+
+                if (!memoryContext.isEmpty()) {
+
+                        conversation.append(memoryContext);
+                        conversation.append("\n");
+                }
+
+                conversation.append("""
+                                You are continuing a conversation with the user.
+
+                                Remember the previous conversation and use it
+                                when answering the new question.
+
+                                Previous conversation:
+                                """);
+
+                for (ChatMessage message : previousMessages) {
+
+                        conversation
+                                        .append("\nUser: ")
+                                        .append(message.getQuestion());
+
+                        conversation
+                                        .append("\nAssistant: ")
+                                        .append(message.getAnswer());
+
+                        conversation.append("\n");
+                }
+
+                conversation.append("\nCurrent user question:\n");
+                conversation.append(question);
+
+                // =====================================================
+                // ASK OPENROUTER
+                // =====================================================
+
+                String answer = openRouterService.askAI(
+                                conversation.toString());
+
+                // =====================================================
+                // SAVE MESSAGE
+                // =====================================================
+
+                ChatMessage message = new ChatMessage(
+                                chat,
+                                question,
+                                answer);
+
+                ChatMessage savedMessage = chatMessageRepository.save(message);
+                // =====================================================
+                // SAVE USEFUL USER MEMORY
+                // =====================================================
+
+                try {
+
+                        memoryService.saveMemoryIfUseful(
+                                        userEmail,
+                                        question);
+
+                } catch (Exception e) {
+
+                        // Memory failure should NEVER break the chat
+                        System.out.println(
+                                        "MEMORY SAVE FAILED: "
+                                                        + e.getMessage());
+                }
+
+                // =====================================================
+                // UPDATE CHAT
+                // =====================================================
+
+                chat.setUpdatedAt(
+                                LocalDateTime.now());
+
+                chatRepository.save(chat);
+
+                return savedMessage;
+        }
+
+        // =========================================================
+        // FILE CHAT
+        // =========================================================
+
+        public ChatMessage askAboutFile(
+                        Long chatId,
+                        String userEmail,
+                        String question,
+                        String fileName,
+                        String content) {
+
+                Chat chat = chatRepository
+                                .findByIdAndUserEmail(
+                                                chatId,
+                                                userEmail)
+                                .orElseThrow(() -> new RuntimeException("Chat not found"));
+
+                if (question == null ||
+                                question.trim().isEmpty()) {
+
+                        throw new RuntimeException(
+                                        "Question cannot be empty");
+                }
+
+                String answer = openRouterService.askAboutFile(
+                                question,
+                                fileName,
+                                content);
+
+                ChatMessage message = new ChatMessage(
+                                chat,
+                                question,
+                                answer);
+
+                ChatMessage savedMessage = chatMessageRepository.save(message);
+
+                chat.setUpdatedAt(
+                                LocalDateTime.now());
+
+                chatRepository.save(chat);
+
+                return savedMessage;
+        }
+
+        // =========================================================
+        // DELETE CHAT
+        // =========================================================
+
+        @Transactional
+        public void deleteChat(
+                        Long chatId,
+                        String userEmail) {
+
+                Chat chat = chatRepository
+                                .findByIdAndUserEmail(
+                                                chatId,
+                                                userEmail)
+                                .orElseThrow(() -> new RuntimeException("Chat not found"));
+
+                chatMessageRepository
+                                .deleteByChatId(chat.getId());
+
+                chatRepository.delete(chat);
+        }
+
+        // =========================================================
+        // RENAME CHAT
+        // =========================================================
+
+        public Chat renameChat(
+                        Long chatId,
+                        String userEmail,
+                        String title) {
+
+                Chat chat = chatRepository
+                                .findByIdAndUserEmail(
+                                                chatId,
+                                                userEmail)
+                                .orElseThrow(() -> new RuntimeException("Chat not found"));
+
+                chat.setTitle(title);
+                chat.setUpdatedAt(
+                                LocalDateTime.now());
+
+                return chatRepository.save(chat);
+        }
 }

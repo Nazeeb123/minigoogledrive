@@ -66,4 +66,83 @@ public class OllamaService {
 
                 return askAI(prompt);
         }
+
+        public double[] createEmbedding(String text) {
+
+                if (text == null || text.trim().isEmpty()) {
+                        throw new RuntimeException("Embedding text cannot be empty");
+                }
+
+                Map<String, Object> request = Map.of(
+                                "model", "nomic-embed-text",
+                                "input", text);
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+                try {
+
+                        ResponseEntity<Map> response = restTemplate.postForEntity(
+                                        "http://localhost:11434/api/embed",
+                                        entity,
+                                        Map.class);
+
+                        if (response.getBody() == null) {
+                                throw new RuntimeException(
+                                                "No response from Ollama embedding API");
+                        }
+
+                        Object embeddingsObject = response.getBody().get("embeddings");
+
+                        if (embeddingsObject == null) {
+                                throw new RuntimeException(
+                                                "Ollama returned no embeddings: "
+                                                                + response.getBody());
+                        }
+
+                        /*
+                         * /api/embed returns:
+                         *
+                         * {
+                         * "embeddings": [
+                         * [0.123, -0.456, ...]
+                         * ]
+                         * }
+                         */
+
+                        java.util.List<?> embeddings = (java.util.List<?>) embeddingsObject;
+
+                        if (embeddings.isEmpty()) {
+                                throw new RuntimeException(
+                                                "Ollama returned an empty embedding");
+                        }
+
+                        java.util.List<?> vector = (java.util.List<?>) embeddings.get(0);
+
+                        double[] result = new double[vector.size()];
+
+                        for (int i = 0; i < vector.size(); i++) {
+
+                                result[i] = ((Number) vector.get(i)).doubleValue();
+                        }
+
+                        System.out.println(
+                                        "OLLAMA EMBEDDING CREATED. DIMENSIONS: "
+                                                        + result.length);
+
+                        return result;
+
+                } catch (Exception e) {
+
+                        System.out.println(
+                                        "OLLAMA EMBEDDING ERROR: "
+                                                        + e.getMessage());
+
+                        throw new RuntimeException(
+                                        "Failed to create embedding using Ollama",
+                                        e);
+                }
+        }
 }

@@ -2,11 +2,13 @@ package com.minidrive.minigoogledrive.controller;
 
 import com.minidrive.minigoogledrive.model.FileData;
 import com.minidrive.minigoogledrive.model.FileVersion;
+import com.minidrive.minigoogledrive.service.EmbeddingService;
 import com.minidrive.minigoogledrive.service.FileDataService;
 import com.minidrive.minigoogledrive.model.User;
 import com.minidrive.minigoogledrive.repository.FileDataRepository;
 import com.minidrive.minigoogledrive.repository.UserRepository;
 import com.minidrive.minigoogledrive.model.SearchResult;
+import com.minidrive.minigoogledrive.service.SemanticSearchService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -19,11 +21,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
@@ -40,6 +45,12 @@ public class FileDataController {
 
         @Autowired
         private FileDataRepository fileDataRepository;
+
+        @Autowired
+        private EmbeddingService embeddingService;
+
+        @Autowired
+        private SemanticSearchService semanticSearchService;
 
         // Upload file
         @PostMapping("/upload")
@@ -168,6 +179,16 @@ public class FileDataController {
 
                 return ResponseEntity.ok(
                                 fileDataService.shareFile(id, email));
+        }
+
+        // Send file directly to an external email address
+        @PostMapping("/{id}/send-email")
+        public ResponseEntity<String> sendFileByEmail(
+                        @PathVariable Long id,
+                        @RequestParam String email) {
+
+                return ResponseEntity.ok(
+                                fileDataService.sendFileByEmail(id, email));
         }
 
         @GetMapping("/shared")
@@ -397,6 +418,121 @@ public class FileDataController {
 
                 return fileDataService.generateShareLink(id);
 
+        }
+
+        @DeleteMapping("/{id}/remove-from-shared")
+        public ResponseEntity<String> removeFromShared(
+                        @PathVariable Long id) {
+
+                return ResponseEntity.ok(
+                                fileDataService.removeFromShared(id));
+        }
+
+        @PostMapping("/{id}/generate-embedding")
+        public ResponseEntity<String> generateEmbedding(
+                        @PathVariable Long id) {
+
+                FileData fileData = fileDataRepository
+                                .findById(id)
+                                .orElseThrow(() -> new RuntimeException("File not found"));
+
+                embeddingService.generateEmbedding(fileData);
+
+                return ResponseEntity.ok(
+                                "Embedding generated successfully");
+        }
+
+        @GetMapping("/semantic-search")
+        public ResponseEntity<List<SearchResult>> semanticSearch(
+                        @RequestParam String query,
+                        Authentication authentication) {
+
+                User user = userRepository
+                                .findByEmail(authentication.getName())
+                                .orElseThrow(() -> new RuntimeException("User not found"));
+
+                List<FileData> files = semanticSearchService.search(query, user);
+
+                List<SearchResult> results = files.stream()
+                                .map(file -> new SearchResult(
+                                                "FILE",
+                                                file.getId(),
+                                                file.getFileName()))
+                                .toList();
+
+                return ResponseEntity.ok(results);
+        }
+
+        @PostMapping("/{id}/convert")
+        public ResponseEntity<?> convertFile(
+                        @PathVariable Long id,
+                        @RequestParam String format,
+                        Authentication authentication) {
+
+                try {
+
+                        String email = authentication.getName();
+
+                        FileData convertedFile = fileDataService.convertFile(id, format, email);
+
+                        return ResponseEntity.ok(convertedFile);
+
+                } catch (Exception e) {
+
+                        e.printStackTrace();
+
+                        return ResponseEntity
+                                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body(Map.of(
+                                                        "message",
+                                                        e.getMessage() != null
+                                                                        ? e.getMessage()
+                                                                        : "File conversion failed"));
+                }
+        }
+
+        @PostMapping("/{id}/compress")
+        public ResponseEntity<?> compressFile(
+                        @PathVariable Long id,
+                        @RequestParam long targetSize) {
+
+                try {
+
+                        Authentication authentication = SecurityContextHolder
+                                        .getContext()
+                                        .getAuthentication();
+
+                        String email = authentication.getName();
+
+                        FileData compressed = fileDataService.compressFile(
+                                        id,
+                                        targetSize,
+                                        email);
+
+                        Map<String, Object> response = new HashMap<>();
+
+                        response.put(
+                                        "message",
+                                        "File compressed successfully");
+
+                        response.put(
+                                        "file",
+                                        compressed);
+
+                        return ResponseEntity.ok(response);
+
+                } catch (Exception e) {
+
+                        Map<String, String> response = new HashMap<>();
+
+                        response.put(
+                                        "message",
+                                        e.getMessage());
+
+                        return ResponseEntity
+                                        .badRequest()
+                                        .body(response);
+                }
         }
 
 }
