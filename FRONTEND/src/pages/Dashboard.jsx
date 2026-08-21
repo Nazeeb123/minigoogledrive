@@ -1,48 +1,90 @@
 import "./Dashboard.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+
 import FileUpload from "../components/FileUpload";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import API from "../services/api";
 import FolderCard from "../components/FolderCard";
 import FileCard from "../components/FileCard";
-import { getFolders, createFolder } from "../services/folderService";
+
+import {
+    getFolders,
+    createFolder
+} from "../services/folderService";
+
 import { useNavigate } from "react-router-dom";
+
 import ShareBox from "../components/ShareBox";
 import SearchResults from "../components/SearchResults";
+
 
 function Dashboard() {
 
     const [files, setFiles] = useState([]);
+
     const [search, setSearch] = useState("");
-    const [searchResults, setSearchResults] = useState([]);
 
-    const [folders, setFolders] = useState([]);
+    const [searchResults, setSearchResults] =
+        useState([]);
 
-    const [showFolderModal, setShowFolderModal] = useState(false);
-    const [folderName, setFolderName] = useState("");
+    // IMPORTANT:
+    // This ref contains both Navbar and SearchResults.
+    const searchRef = useRef(null);
 
-    const [recentFiles, setRecentFiles] = useState([]);
+    const [folders, setFolders] =
+        useState([]);
 
-    const [shareFile, setShareFile] = useState(null);
+    const [showFolderModal, setShowFolderModal] =
+        useState(false);
 
-    const [userEmail, setUserEmail] = useState("");
+    const [folderName, setFolderName] =
+        useState("");
+
+    const [recentFiles, setRecentFiles] =
+        useState([]);
+
+    const [shareFile, setShareFile] =
+        useState(null);
+
+    const [userEmail, setUserEmail] =
+        useState("");
+
     const navigate = useNavigate();
-    const [loggingOut, setLoggingOut] = useState(false);
 
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [uploading, setUploading] = useState(false);
+    const [loggingOut, setLoggingOut] =
+        useState(false);
 
-    const [notifications, setNotifications] = useState([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [showNotifications, setShowNotifications] = useState(false);
+    const [uploadProgress, setUploadProgress] =
+        useState(0);
+
+    const [uploading, setUploading] =
+        useState(false);
+
+    const [notifications, setNotifications] =
+        useState([]);
+
+    const [unreadCount, setUnreadCount] =
+        useState(0);
+
+    const [showNotifications, setShowNotifications] =
+        useState(false);
+
     const [popup, setPopup] = useState({
         show: false,
         message: "",
         type: ""
     });
 
-    const showPopup = (message, type = "success") => {
+
+    // =====================================================
+    // POPUP
+    // =====================================================
+
+    const showPopup = (
+        message,
+        type = "success"
+    ) => {
 
         setPopup({
             show: true,
@@ -63,21 +105,67 @@ function Dashboard() {
     };
 
 
-
-
     // =====================================================
     // INITIAL LOAD
     // =====================================================
 
     useEffect(() => {
 
-        setUserEmail(localStorage.getItem("email"));
+        setUserEmail(
+            localStorage.getItem("email")
+        );
 
         loadFiles();
         loadFolders();
         loadRecentFiles();
         loadNotifications();
         loadUnreadCount();
+
+    }, []);
+
+
+    // =====================================================
+    // CLOSE SEARCH WHEN CLICKING OUTSIDE
+    // =====================================================
+
+    useEffect(() => {
+
+        const handleClickOutside = (event) => {
+
+            if (!searchRef.current) {
+                return;
+            }
+
+            // If click is outside the complete search area
+            if (
+                !searchRef.current.contains(
+                    event.target
+                )
+            ) {
+
+                setSearch("");
+
+                setSearchResults([]);
+
+            }
+
+        };
+
+
+        document.addEventListener(
+            "mousedown",
+            handleClickOutside
+        );
+
+
+        return () => {
+
+            document.removeEventListener(
+                "mousedown",
+                handleClickOutside
+            );
+
+        };
 
     }, []);
 
@@ -90,32 +178,46 @@ function Dashboard() {
 
         setSearch(value);
 
+
+        // Empty search
         if (value.trim() === "") {
+
             setSearchResults([]);
+
             return;
+
         }
+
 
         try {
 
-            const query = value.trim();
+            const query =
+                value.trim();
 
-            // =========================================
+
+            // =================================================
             // NORMAL SEARCH
-            // File name + Folder name
-            // =========================================
+            // =================================================
 
-            const normalResponse = await API.get(
-                `/files/search?query=${encodeURIComponent(query)}`
-            );
+            const normalResponse =
+                await API.get(
+                    `/files/search?query=${encodeURIComponent(
+                        query
+                    )}`
+                );
 
-            // =========================================
+
+            // =================================================
             // SEMANTIC SEARCH
-            // Search by meaning/content
-            // =========================================
+            // =================================================
 
-            const semanticResponse = await API.get(
-                `/files/semantic-search?query=${encodeURIComponent(query)}`
-            );
+            const semanticResponse =
+                await API.get(
+                    `/files/semantic-search?query=${encodeURIComponent(
+                        query
+                    )}`
+                );
+
 
             console.log(
                 "NORMAL SEARCH:",
@@ -127,31 +229,48 @@ function Dashboard() {
                 semanticResponse.data
             );
 
-            // =========================================
-            // COMBINE RESULTS
-            // =========================================
+
+            // =================================================
+            // COMBINE
+            // =================================================
 
             const combinedResults = [
+
                 ...normalResponse.data,
+
                 ...semanticResponse.data
+
             ];
 
-            // =========================================
-            // REMOVE DUPLICATES
-            // =========================================
 
-            const uniqueResults = Array.from(
-                new Map(
-                    combinedResults.map(
-                        item => [
-                            `${item.type}-${item.id}`,
-                            item
-                        ]
-                    )
-                ).values()
+            // =================================================
+            // REMOVE DUPLICATES
+            // =================================================
+
+            const uniqueResults =
+                Array.from(
+
+                    new Map(
+
+                        combinedResults.map(
+                            item => [
+
+                                `${item.type}-${item.id}`,
+
+                                item
+
+                            ]
+                        )
+
+                    ).values()
+
+                );
+
+
+            setSearchResults(
+                uniqueResults
             );
 
-            setSearchResults(uniqueResults);
 
         } catch (error) {
 
@@ -163,6 +282,7 @@ function Dashboard() {
             setSearchResults([]);
 
         }
+
     };
 
 
@@ -170,23 +290,28 @@ function Dashboard() {
     // SEARCH ENTER
     // =====================================================
 
+    // IMPORTANT:
+    // ONLY ONE handleSearchEnter exists.
     const handleSearchEnter = (e) => {
 
-        if (e.key === "Enter") {
-
-            e.preventDefault();
-
-            if (search.trim() !== "") {
-
-                navigate(
-                    `/search?query=${encodeURIComponent(
-                        search.trim()
-                    )}`
-                );
-
-            }
-
+        if (e.key !== "Enter") {
+            return;
         }
+
+
+        e.preventDefault();
+
+
+        if (search.trim() === "") {
+            return;
+        }
+
+
+        navigate(
+            `/search?query=${encodeURIComponent(
+                search.trim()
+            )}`
+        );
 
     };
 
@@ -202,9 +327,14 @@ function Dashboard() {
             const response =
                 await API.get("/files/my");
 
-            console.log("MY FILES RESPONSE:", response.data);
+            console.log(
+                "MY FILES RESPONSE:",
+                response.data
+            );
 
-            setFiles(response.data);
+            setFiles(
+                response.data
+            );
 
         } catch (error) {
 
@@ -229,7 +359,9 @@ function Dashboard() {
             const response =
                 await getFolders();
 
-            setFolders(response.data);
+            setFolders(
+                response.data
+            );
 
         } catch (error) {
 
@@ -255,20 +387,27 @@ function Dashboard() {
                 await API.get(
                     `/files/download/${id}`,
                     {
-                        responseType: "blob",
+                        responseType: "blob"
                     }
                 );
 
+
             const url =
                 window.URL.createObjectURL(
-                    new Blob([response.data])
+                    new Blob([
+                        response.data
+                    ])
                 );
+
 
             const link =
                 document.createElement("a");
 
+
             link.href = url;
+
             link.download = "download";
+
 
             document.body.appendChild(link);
 
@@ -276,7 +415,11 @@ function Dashboard() {
 
             link.remove();
 
-            window.URL.revokeObjectURL(url);
+
+            window.URL.revokeObjectURL(
+                url
+            );
+
 
         } catch (error) {
 
@@ -302,9 +445,12 @@ function Dashboard() {
                 `/files/${id}/trash`
             );
 
-            alert("File moved to Trash");
+            alert(
+                "File moved to Trash"
+            );
 
             loadFiles();
+
             loadRecentFiles();
 
         } catch (error) {
@@ -361,7 +507,9 @@ function Dashboard() {
 
     const handleCreateFolder = async () => {
 
-        if (folderName.trim() === "") {
+        if (
+            folderName.trim() === ""
+        ) {
 
             showPopup(
                 "Enter folder name",
@@ -369,7 +517,9 @@ function Dashboard() {
             );
 
             return;
+
         }
+
 
         try {
 
@@ -377,16 +527,22 @@ function Dashboard() {
                 folderName
             );
 
+
             setFolderName("");
 
-            setShowFolderModal(false);
+            setShowFolderModal(
+                false
+            );
+
 
             loadFolders();
+
 
             showPopup(
                 "Folder created successfully",
                 "success"
             );
+
 
         } catch (error) {
 
@@ -394,6 +550,7 @@ function Dashboard() {
                 "CREATE FOLDER ERROR:",
                 error
             );
+
 
             showPopup(
                 "Failed to create folder",
@@ -414,7 +571,9 @@ function Dashboard() {
         try {
 
             const response =
-                await API.get("/files/recent");
+                await API.get(
+                    "/files/recent"
+                );
 
             setRecentFiles(
                 response.data
@@ -503,6 +662,7 @@ function Dashboard() {
             );
 
             loadNotifications();
+
             loadUnreadCount();
 
         } catch (error) {
@@ -518,12 +678,13 @@ function Dashboard() {
 
 
     // =====================================================
-    // LOAD FILES AFTER FILE ACTION
+    // REFRESH FILES
     // =====================================================
 
     const refreshAllFiles = () => {
 
         loadFiles();
+
         loadRecentFiles();
 
     };
@@ -536,6 +697,8 @@ function Dashboard() {
     return (
 
         <div className="dashboard-container">
+
+            {/* POPUP */}
 
             {popup.show && (
 
@@ -560,56 +723,84 @@ function Dashboard() {
 
             )}
 
+
             <Sidebar />
 
 
-            {/* =========================
-                    DASHBOARD
-                ========================= */}
+            {/* =================================================
+                DASHBOARD
+            ================================================= */}
 
             <div className="dashboard">
 
 
-                {/* =========================
-                        NAVBAR
-                    ========================= */}
+                {/* =================================================
+                    SEARCH AREA
 
-                <Navbar
+                    Navbar + SearchResults are inside this ref.
 
-                    search={search}
+                    So clicking either the search bar OR the
+                    results does NOT close the search.
 
-                    setSearch={handleSearch}
+                    Clicking anywhere else DOES close it.
+                ================================================= */}
 
-                    onSearchEnter={
-                        handleSearchEnter
-                    }
+                <div
+                    ref={searchRef}
+                    className="search-area"
+                >
 
-                    notifications={
-                        notifications
-                    }
+                    <Navbar
 
-                    unreadCount={
-                        unreadCount
-                    }
+                        search={search}
 
-                    showNotifications={
-                        showNotifications
-                    }
+                        setSearch={handleSearch}
 
-                    setShowNotifications={
-                        setShowNotifications
-                    }
+                        onSearchEnter={
+                            handleSearchEnter
+                        }
 
-                    markNotificationRead={
-                        markNotificationRead
-                    }
+                        notifications={
+                            notifications
+                        }
 
-                />
+                        unreadCount={
+                            unreadCount
+                        }
+
+                        showNotifications={
+                            showNotifications
+                        }
+
+                        setShowNotifications={
+                            setShowNotifications
+                        }
+
+                        markNotificationRead={
+                            markNotificationRead
+                        }
+
+                    />
 
 
-                {/* =========================
-                        FILE UPLOAD
-                    ========================= */}
+                    {/* SEARCH RESULTS */}
+
+                    {search && (
+
+                        <SearchResults
+                            results={
+                                searchResults
+                            }
+                        />
+
+                    )}
+
+                </div>
+
+
+                {/* =================================================
+                    FILE UPLOAD
+                ================================================= */}
 
                 <FileUpload
                     refreshFiles={
@@ -618,33 +809,18 @@ function Dashboard() {
                 />
 
 
-                {/* =========================
-                        SEARCH RESULTS
-                    ========================= */}
-
-                {search && (
-
-                    <SearchResults
-                        results={
-                            searchResults
-                        }
-                    />
-
-                )}
-
-
-                {/* =========================
-                        WELCOME
-                    ========================= */}
+                {/* =================================================
+                    WELCOME
+                ================================================= */}
 
                 <h1>
                     Welcome to Your Drive 👋
                 </h1>
 
 
-                {/* =========================
-                        MY DRIVE HEADER
-                    ========================= */}
+                {/* =================================================
+                    MY DRIVE HEADER
+                ================================================= */}
 
                 <div className="drive-header">
 
@@ -652,10 +828,13 @@ function Dashboard() {
                         📁 My Drive
                     </h2>
 
+
                     <button
                         className="new-folder-btn"
                         onClick={() =>
-                            setShowFolderModal(true)
+                            setShowFolderModal(
+                                true
+                            )
                         }
                     >
                         + New Folder
@@ -664,9 +843,9 @@ function Dashboard() {
                 </div>
 
 
-                {/* =========================
-                        FOLDERS
-                    ========================= */}
+                {/* =================================================
+                    FOLDERS
+                ================================================= */}
 
                 <div className="folders-grid">
 
@@ -674,7 +853,10 @@ function Dashboard() {
                         (folder) => (
 
                             <div
-                                key={folder.id}
+                                key={
+                                    folder.id
+                                }
+
                                 onClick={() =>
                                     navigate(
                                         `/folder/${folder.id}`
@@ -702,13 +884,14 @@ function Dashboard() {
                 </div>
 
 
-                {/* =========================
-                        RECENT FILES
-                    ========================= */}
+                {/* =================================================
+                    RECENT FILES
+                ================================================= */}
 
                 <h2>
                     🕒 Recent Files
                 </h2>
+
 
                 <div className="files-grid">
 
@@ -764,9 +947,9 @@ function Dashboard() {
             </div>
 
 
-            {/* =========================
-                    CREATE FOLDER MODAL
-                ========================= */}
+            {/* =================================================
+                CREATE FOLDER MODAL
+            ================================================= */}
 
             {showFolderModal && (
 
@@ -824,9 +1007,9 @@ function Dashboard() {
             )}
 
 
-            {/* =========================
-                    SHARE BOX
-                ========================= */}
+            {/* =================================================
+                SHARE BOX
+            ================================================= */}
 
             {shareFile && (
 

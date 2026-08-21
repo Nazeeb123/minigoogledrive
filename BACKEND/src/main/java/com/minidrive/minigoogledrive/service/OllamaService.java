@@ -69,40 +69,80 @@ public class OllamaService {
 
         public double[] createEmbedding(String text) {
 
+                if (text == null || text.trim().isEmpty()) {
+                        throw new RuntimeException("Embedding text cannot be empty");
+                }
+
                 Map<String, Object> request = Map.of(
                                 "model", "nomic-embed-text",
-                                "prompt", text);
+                                "input", text);
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
                 HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
-                ResponseEntity<Map> response = restTemplate.postForEntity(
-                                "http://localhost:11434/api/embeddings",
-                                entity,
-                                Map.class);
+                try {
 
-                if (response.getBody() == null) {
+                        ResponseEntity<Map> response = restTemplate.postForEntity(
+                                        "http://localhost:11434/api/embed",
+                                        entity,
+                                        Map.class);
+
+                        if (response.getBody() == null) {
+                                throw new RuntimeException(
+                                                "No response from Ollama embedding API");
+                        }
+
+                        Object embeddingsObject = response.getBody().get("embeddings");
+
+                        if (embeddingsObject == null) {
+                                throw new RuntimeException(
+                                                "Ollama returned no embeddings: "
+                                                                + response.getBody());
+                        }
+
+                        /*
+                         * /api/embed returns:
+                         *
+                         * {
+                         * "embeddings": [
+                         * [0.123, -0.456, ...]
+                         * ]
+                         * }
+                         */
+
+                        java.util.List<?> embeddings = (java.util.List<?>) embeddingsObject;
+
+                        if (embeddings.isEmpty()) {
+                                throw new RuntimeException(
+                                                "Ollama returned an empty embedding");
+                        }
+
+                        java.util.List<?> vector = (java.util.List<?>) embeddings.get(0);
+
+                        double[] result = new double[vector.size()];
+
+                        for (int i = 0; i < vector.size(); i++) {
+
+                                result[i] = ((Number) vector.get(i)).doubleValue();
+                        }
+
+                        System.out.println(
+                                        "OLLAMA EMBEDDING CREATED. DIMENSIONS: "
+                                                        + result.length);
+
+                        return result;
+
+                } catch (Exception e) {
+
+                        System.out.println(
+                                        "OLLAMA EMBEDDING ERROR: "
+                                                        + e.getMessage());
+
                         throw new RuntimeException(
-                                        "No response from Ollama");
+                                        "Failed to create embedding using Ollama",
+                                        e);
                 }
-
-                Object embedding = response.getBody().get("embedding");
-
-                if (embedding == null) {
-                        throw new RuntimeException(
-                                        "Ollama returned no embedding");
-                }
-
-                java.util.List<?> list = (java.util.List<?>) embedding;
-
-                double[] result = new double[list.size()];
-
-                for (int i = 0; i < list.size(); i++) {
-                        result[i] = ((Number) list.get(i)).doubleValue();
-                }
-
-                return result;
         }
 }

@@ -900,3 +900,484 @@
     background: #f1f1f1;
     color: #111;
 }
+
+/* =========================================
+   AI MARKDOWN RESPONSE
+========================================= */
+
+.message-text p {
+    margin: 0 0 12px;
+}
+
+.message-text p:last-child {
+    margin-bottom: 0;
+}
+
+/* Bold */
+
+.message-text strong {
+    color: #ffffff;
+    font-weight: 650;
+}
+
+/* Italic */
+
+.message-text em {
+    color: #d8d8d8;
+}
+
+/* Headings */
+
+.message-text h1,
+.message-text h2,
+.message-text h3 {
+    margin: 18px 0 10px;
+    color: #ffffff;
+    line-height: 1.35;
+}
+
+.message-text h1 {
+    font-size: 21px;
+}
+
+.message-text h2 {
+    font-size: 18px;
+}
+
+.message-text h3 {
+    font-size: 16px;
+}
+
+/* Lists */
+
+.message-text ul,
+.message-text ol {
+    margin: 8px 0 14px;
+    padding-left: 25px;
+}
+
+.message-text li {
+    margin: 5px 0;
+}
+
+/* Inline code */
+
+.message-text code {
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: #171717;
+    color: #e6e6e6;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+}
+
+/* Code blocks */
+
+.message-text pre {
+    margin: 14px 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    border: 1px solid #3a3a3a;
+    border-radius: 9px;
+    background: #171717;
+}
+
+.message-text pre code {
+    padding: 0;
+    background: transparent;
+    color: #e6e6e6;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Tables */
+
+.message-text table {
+    width: 100%;
+    margin: 14px 0;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.message-text th,
+.message-text td {
+    padding: 9px 11px;
+    border: 1px solid #444;
+    text-align: left;
+}
+
+.message-text th {
+    background: #303030;
+    color: #ffffff;
+}
+
+.message-text td {
+    background: #252525;
+}
+
+/* Blockquotes */
+
+.message-text blockquote {
+    margin: 12px 0;
+    padding: 8px 14px;
+    border-left: 3px solid #777;
+    color: #bdbdbd;
+    background: #252525;
+}
+
+/* Horizontal line */
+
+.message-text hr {
+    margin: 18px 0;
+    border: none;
+    border-top: 1px solid #3b3b3b;
+}
+
+/* Links */
+
+.message-text a {
+    color: #8ab4f8;
+    text-decoration: none;
+}
+
+.message-text a:hover {
+    text-decoration: underline;
+}
+
+/* Better spacing for AI answers */
+
+.ai-row .message-text {
+    line-height: 1.75;
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+
+    .message-text h1 {
+        font-size: 19px;
+    }
+
+    .message-text h2 {
+        font-size: 17px;
+    }
+
+    .message-text h3 {
+        font-size: 15px;
+    }
+
+    .message-text pre {
+        padding: 12px;
+        font-size: 12px;
+    }
+
+    .message-text table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+/* =========================================
+   MESSAGE ACTIONS
+========================================= */
+
+.message-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.message-actions button {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 7px;
+
+    background: transparent;
+    color: #858585;
+
+    font-size: 14px;
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.message-actions button:hover {
+    background: #353535;
+    color: #ffffff;
+}
+
+/* =========================================
+   ATTACHMENT
+========================================= */
+
+.attach-button {
+    width: 37px;
+    height: 37px;
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-right: 6px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: transparent;
+    color: #aaa;
+
+    font-size: 24px;
+    cursor: pointer;
+
+    transition: 0.18s ease;
+}
+
+.attach-button:hover {
+    background: #3a3a3a;
+    color: #fff;
+}
+
+.attached-file {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 8px;
+    padding: 8px 12px;
+
+    border: 1px solid #3d3d3d;
+    border-radius: 9px;
+
+    background: #292929;
+
+    color: #d5d5d5;
+    font-size: 12px;
+}
+
+.attached-file span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attached-file button {
+    border: none;
+    background: transparent;
+    color: #888;
+
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.attached-file button:hover {
+    color: #fff;
+}
+
+/* =========================================================
+   MARKDOWN + LATEX
+========================================================= */
+
+.message-text .markdown-paragraph {
+    margin: 0 0 12px;
+}
+
+.message-text .markdown-paragraph:last-child {
+    margin-bottom: 0;
+}
+
+.message-text .markdown-h1,
+.message-text .markdown-h2,
+.message-text .markdown-h3 {
+    color: #f1f1f1;
+    margin-top: 18px;
+    margin-bottom: 10px;
+}
+
+.message-text .markdown-h1 {
+    font-size: 22px;
+}
+
+.message-text .markdown-h2 {
+    font-size: 19px;
+}
+
+.message-text .markdown-h3 {
+    font-size: 16px;
+}
+
+.message-text .markdown-ul,
+.message-text .markdown-ol {
+    margin: 8px 0 14px 22px;
+    padding-left: 18px;
+}
+
+.message-text .markdown-li {
+    margin-bottom: 6px;
+}
+
+.message-text .markdown-strong {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.message-text .markdown-blockquote {
+    margin: 12px 0;
+    padding: 8px 14px;
+    border-left: 3px solid #666;
+    color: #bdbdbd;
+    background: #242424;
+    border-radius: 4px;
+}
+
+.message-text .markdown-hr {
+    border: none;
+    border-top: 1px solid #444;
+    margin: 18px 0;
+}
+
+/* Inline code */
+
+.message-text .inline-code {
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: #303030;
+    color: #e6e6e6;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+}
+
+/* Code blocks */
+
+.message-text .code-block {
+    margin: 12px 0;
+    padding: 14px;
+    overflow-x: auto;
+    border-radius: 9px;
+    background: #171717;
+    border: 1px solid #383838;
+}
+
+.message-text .code-block code {
+    color: #e6e6e6;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre;
+}
+
+/* =========================================================
+   KATEX MATH
+========================================================= */
+
+.message-text .katex {
+    font-size: 1.05em;
+}
+
+.message-text .katex-display {
+    margin: 18px 0;
+    padding: 10px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.message-text .katex-display::-webkit-scrollbar {
+    height: 5px;
+}
+
+.message-text .katex-display::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 10px;
+}
+
+/* =========================================================
+   AI MESSAGE ACTIONS
+========================================================= */
+
+.ai-message-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.ai-action-btn {
+    border: none;
+    background: transparent;
+    color: #858585;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.ai-action-btn:hover {
+    background: #353535;
+    color: #eeeeee;
+}
+
+.ai-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   AI RESPONSE ACTION BUTTONS
+========================================================= */
+
+.ai-message-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 12px;
+}
+
+.ai-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 6px 9px;
+
+    border: none;
+    border-radius: 7px;
+
+    background: transparent;
+    color: #8e8e8e;
+
+    font-size: 12px;
+    font-family: inherit;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.ai-action-btn:hover {
+    background: #383838;
+    color: #eeeeee;
+}
+
+.ai-action-btn:active {
+    transform: scale(0.97);
+}
+
+.ai-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

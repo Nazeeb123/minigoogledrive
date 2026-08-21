@@ -13,9 +13,16 @@ function SearchResults({ results = [] }) {
     // =====================================================
 
     const openFile = async (id) => {
-
         try {
 
+            // Mark as viewed
+            try {
+                await API.get(`/files/mark-viewed/${id}`);
+            } catch (error) {
+                console.log("Mark viewed failed:", error);
+            }
+
+            // Open file
             const response = await API.get(
                 `/files/view/${id}`,
                 {
@@ -23,26 +30,18 @@ function SearchResults({ results = [] }) {
                 }
             );
 
-
             const blob = new Blob(
                 [response.data],
                 {
                     type:
-                        response.headers["content-type"]
-                        || "application/octet-stream"
+                        response.headers["content-type"] ||
+                        "application/octet-stream"
                 }
             );
 
+            const url = window.URL.createObjectURL(blob);
 
-            const url =
-                window.URL.createObjectURL(blob);
-
-
-            window.open(
-                url,
-                "_blank"
-            );
-
+            window.open(url, "_blank");
 
         } catch (error) {
 
@@ -51,12 +50,17 @@ function SearchResults({ results = [] }) {
                 error
             );
 
-            alert("Cannot open file");
+            console.log(
+                "SERVER ERROR:",
+                error.response?.data
+            );
 
+            alert(
+                error.response?.data?.message ||
+                "Cannot open file"
+            );
         }
-
     };
-
 
     // =====================================================
     // OPEN SEARCH RESULT

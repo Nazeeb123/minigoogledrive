@@ -206,16 +206,15 @@ function FileCard({
     // OPEN FILE
     // =========================
 
-    const openFile = async (e) => {
-
-        e?.stopPropagation();
+    const openFile = async (id) => {
 
         try {
 
+            // Mark file as viewed
             try {
 
                 await API.get(
-                    `/files/mark-viewed/${file.id}`
+                    `/files/mark-viewed/${id}`
                 );
 
             } catch (error) {
@@ -227,24 +226,22 @@ function FileCard({
 
             }
 
-            const response =
-                await API.get(
-                    `/files/view/${file.id}`,
-                    {
-                        responseType: "blob"
-                    }
-                );
+            // Open file
+            const response = await API.get(
+                `/files/view/${id}`,
+                {
+                    responseType: "blob"
+                }
+            );
 
-            const blob =
-                new Blob(
-                    [response.data],
-                    {
-                        type:
-                            response.headers[
-                            "content-type"
-                            ]
-                    }
-                );
+            const blob = new Blob(
+                [response.data],
+                {
+                    type:
+                        response.headers["content-type"]
+                        || "application/octet-stream"
+                }
+            );
 
             const url =
                 window.URL.createObjectURL(blob);
@@ -254,18 +251,14 @@ function FileCard({
                 "_blank"
             );
 
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.log(
-                "OPEN FILE ERROR:",
+                "OPEN SEARCH FILE ERROR:",
                 error
             );
 
-            alert(
-                "Cannot open file"
-            );
+            alert("Cannot open file");
 
         }
 
@@ -795,7 +788,7 @@ function FileCard({
 
             <div
                 className="file-icon"
-                onClick={openFile}
+                onClick={() => openFile(file.id)}
             >
                 {icon}
             </div>
@@ -878,9 +871,9 @@ function FileCard({
 
                 <button
                     className="open-btn"
-                    onClick={openFile}
+                    onClick={() => openFile(file.id)}
                 >
-                    👁 Open
+                    Open
                 </button>
 
             </div>

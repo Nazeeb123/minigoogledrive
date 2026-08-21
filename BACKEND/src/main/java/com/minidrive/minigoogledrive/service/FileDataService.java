@@ -100,11 +100,16 @@ public class FileDataService {
         }
 
         // Upload File
-        public FileData uploadFile(MultipartFile file, String email, Long folderId, String fileName) {
+        public FileData uploadFile(
+                        MultipartFile file,
+                        String email,
+                        Long folderId,
+                        String fileName) {
 
                 if (file.getSize() > 10 * 1024 * 1024) {
                         throw new RuntimeException("File size exceeds 10 MB");
                 }
+
                 String contentType = file.getContentType();
 
                 if (contentType == null ||
@@ -119,53 +124,108 @@ public class FileDataService {
 
                         throw new RuntimeException("File type is not allowed");
                 }
+
                 try {
 
                         File directory = new File(uploadDir);
 
-                        if (!directory.exists()) {
-                                directory.mkdirs();
+                        if (!directory.exists() && !directory.mkdirs()) {
+                                throw new RuntimeException(
+                                                "Could not create uploads directory");
                         }
+
+                        /*
+                         * IMPORTANT:
+                         *
+                         * The database/display filename remains the original name.
+                         * The physical filename gets a UUID so two users can upload
+                         * files with the same name without overwriting each other.
+                         */
+                        String originalFileName = file.getOriginalFilename();
+
+                        if (originalFileName == null ||
+                                        originalFileName.trim().isEmpty()) {
+
+                                originalFileName = "uploaded-file";
+                        }
+
+                        originalFileName = Paths.get(originalFileName)
+                                        .getFileName()
+                                        .toString();
+
+                        String storedFileName = UUID.randomUUID()
+                                        .toString()
+                                        + "_"
+                                        + originalFileName;
 
                         Path filePath = Paths.get(
                                         uploadDir,
-                                        file.getOriginalFilename());
+                                        storedFileName);
 
                         Files.copy(
                                         file.getInputStream(),
                                         filePath,
                                         StandardCopyOption.REPLACE_EXISTING);
 
-                        User user = userRepository.findByEmail(email)
+                        User user = userRepository
+                                        .findByEmail(email)
                                         .orElseThrow(() -> new RuntimeException("User not found"));
 
                         Folder folder = null;
 
                         if (folderId != null) {
-                                folder = folderRepository.findById(folderId)
-                                                .orElseThrow(() -> new RuntimeException("Folder not found"));
+
+                                folder = folderRepository
+                                                .findById(folderId)
+                                                .orElseThrow(() -> new RuntimeException(
+                                                                "Folder not found"));
                         }
 
                         FileData fileData = new FileData();
 
-                        fileData.setFileName(fileName);
-                        fileData.setFileType(file.getContentType());
-                        fileData.setFilePath(filePath.toString());
-                        fileData.setFileSize(file.getSize());
-                        fileData.setUploadDate(LocalDateTime.now());
+                        /*
+                         * DISPLAY NAME
+                         */
+                        fileData.setFileName(
+                                        fileName != null &&
+                                                        !fileName.trim().isEmpty()
+                                                                        ? fileName
+                                                                        : originalFileName);
+
+                        /*
+                         * UNIQUE PHYSICAL PATH
+                         */
+                        fileData.setFileType(
+                                        file.getContentType());
+
+                        fileData.setFilePath(
+                                        filePath.toString());
+
+                        fileData.setFileSize(
+                                        file.getSize());
+
+                        fileData.setUploadDate(
+                                        LocalDateTime.now());
 
                         fileData.setUser(user);
+
                         fileData.setFolder(folder);
 
                         FileData savedFile = fileDataRepository.save(fileData);
 
-                        embeddingService.generateEmbedding(savedFile);
+                        /*
+                         * Generate semantic-search embedding.
+                         */
+                        embeddingService.generateEmbedding(
+                                        savedFile);
 
                         return savedFile;
 
                 } catch (IOException e) {
 
-                        throw new RuntimeException("File upload failed", e);
+                        throw new RuntimeException(
+                                        "File upload failed",
+                                        e);
                 }
         }
 
@@ -461,25 +521,51 @@ public class FileDataService {
                                 .getAuthentication()
                                 .getName();
 
-                User user = userRepository.findByEmail(email)
+                User user = userRepository
+                                .findByEmail(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-                FileData fileData = fileDataRepository.findById(id)
+                FileData fileData = fileDataRepository
+                                .findById(id)
                                 .orElseThrow(() -> new RuntimeException("File not found"));
 
                 if (!fileData.getUser().getId().equals(user.getId())) {
-                        throw new RuntimeException("You cannot delete this file");
+
+                        throw new RuntimeException(
+                                        "You cannot permanently delete this file");
                 }
 
-                // Delete physical file
-                File file = new File(fileData.getFilePath());
+                String filePath = fileData.getFilePath();
 
-                if (file.exists()) {
-                        file.delete();
-                }
-
-                // Delete database record
+                /*
+                 * Delete DB record first.
+                 */
                 fileDataRepository.delete(fileData);
+
+                /*
+                 * Only delete the physical file when no other
+                 * FileData record references it.
+                 *
+                 * This protects shared/copied records.
+                 */
+                long remainingReferences = fileDataRepository.countByFilePath(filePath);
+
+                if (remainingReferences == 0) {
+
+                        File physicalFile = new File(filePath);
+
+                        if (physicalFile.exists()) {
+
+                                boolean deleted = physicalFile.delete();
+
+                                if (!deleted) {
+
+                                        System.out.println(
+                                                        "WARNING: Could not delete physical file: "
+                                                                        + filePath);
+                                }
+                        }
+                }
 
                 return "File permanently deleted";
         }

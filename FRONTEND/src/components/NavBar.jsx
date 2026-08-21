@@ -3,6 +3,7 @@ import axios from "axios";
 import { FaSearch, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "./Navbar.css";
+
 function Navbar({
   search,
   setSearch,
@@ -21,12 +22,23 @@ function Navbar({
 
   const notificationRef = useRef(null);
 
+  // =====================================================
+  // LOAD NOTIFICATIONS
+  // =====================================================
+
   useEffect(() => {
+
     if (!token) return;
 
     fetchNotifications();
     fetchUnreadCount();
+
   }, [token]);
+
+
+  // =====================================================
+  // FETCH NOTIFICATIONS
+  // =====================================================
 
   const fetchNotifications = async () => {
 
@@ -53,6 +65,12 @@ function Navbar({
     }
 
   };
+
+
+  // =====================================================
+  // DELETE NOTIFICATION
+  // =====================================================
+
   const deleteNotification = async (id) => {
 
     try {
@@ -66,18 +84,23 @@ function Navbar({
         }
       );
 
-      // Remove notification from UI
-      setNotifications(prev =>
-        prev.filter(notification => notification.id !== id)
-      );
-
-      // Update unread count if deleted notification was unread
       const deletedNotification =
         notifications.find(
-          notification => notification.id === id
+          notification =>
+            notification.id === id
         );
 
-      if (deletedNotification && !deletedNotification.read) {
+      setNotifications(prev =>
+        prev.filter(
+          notification =>
+            notification.id !== id
+        )
+      );
+
+      if (
+        deletedNotification &&
+        !deletedNotification.read
+      ) {
 
         setUnreadCount(prev =>
           Math.max(0, prev - 1)
@@ -96,6 +119,10 @@ function Navbar({
 
   };
 
+
+  // =====================================================
+  // FETCH UNREAD COUNT
+  // =====================================================
 
   const fetchUnreadCount = async () => {
 
@@ -124,6 +151,10 @@ function Navbar({
   };
 
 
+  // =====================================================
+  // MARK NOTIFICATION AS READ
+  // =====================================================
+
   const markNotificationRead = async (id) => {
 
     try {
@@ -142,9 +173,9 @@ function Navbar({
         prev.map(notification =>
           notification.id === id
             ? {
-              ...notification,
-              read: true
-            }
+                ...notification,
+                read: true
+              }
             : notification
         )
       );
@@ -165,13 +196,19 @@ function Navbar({
   };
 
 
+  // =====================================================
+  // CLOSE NOTIFICATION DROPDOWN
+  // =====================================================
+
   useEffect(() => {
 
     const handleClickOutside = (event) => {
 
       if (
         notificationRef.current &&
-        !notificationRef.current.contains(event.target)
+        !notificationRef.current.contains(
+          event.target
+        )
       ) {
 
         setShowNotifications(false);
@@ -197,24 +234,40 @@ function Navbar({
   }, []);
 
 
+  // =====================================================
+  // UI
+  // =====================================================
+
   return (
 
     <div className="navbar">
+
+      {/* LOGOUT OVERLAY */}
+
       {loggingOut && (
+
         <div className="logout-overlay">
 
           <div className="logout-box">
 
             <div className="logout-spinner"></div>
 
-            <h2>Logging out...</h2>
+            <h2>
+              Logging out...
+            </h2>
 
-            <p>Please wait</p>
+            <p>
+              Please wait
+            </p>
 
           </div>
 
         </div>
+
       )}
+
+
+      {/* TITLE */}
 
       <h2>
         Mini Google Drive
@@ -222,8 +275,8 @@ function Navbar({
 
 
       {/* =========================
-                SEARCH
-            ========================= */}
+          SEARCH
+      ========================= */}
 
       <div className="search-container">
 
@@ -244,8 +297,8 @@ function Navbar({
 
 
       {/* =========================
-                RIGHT SIDE
-            ========================= */}
+          RIGHT SIDE
+      ========================= */}
 
       <div className="navbar-right">
 
@@ -255,8 +308,8 @@ function Navbar({
 
 
         {/* =========================
-                    NOTIFICATIONS
-                ========================= */}
+            NOTIFICATIONS
+        ========================= */}
 
         <div
           className="notification-container"
@@ -302,6 +355,7 @@ function Navbar({
                 Notifications
               </h3>
 
+
               {notifications.length === 0 ? (
 
                 <p className="no-notifications">
@@ -310,77 +364,82 @@ function Navbar({
 
               ) : (
 
-                notifications.map((notification) => (
-
-                  <div
-                    key={notification.id}
-                    className={`notification-item ${notification.read ? "read" : "unread"
-                      }`}
-                  >
-
-                    {/* NOTIFICATION CONTENT */}
+                notifications.map(
+                  (notification) => (
 
                     <div
-                      className="notification-main"
-                      onClick={() => {
+                      key={notification.id}
+                      className={`notification-item ${
+                        notification.read
+                          ? "read"
+                          : "unread"
+                      }`}
+                    >
 
-                        if (!notification.read) {
+                      {/* NOTIFICATION CONTENT */}
 
-                          markNotificationRead(
+                      <div
+                        className="notification-main"
+                        onClick={() => {
+
+                          if (
+                            !notification.read
+                          ) {
+
+                            markNotificationRead(
+                              notification.id
+                            );
+
+                          }
+
+                        }}
+                      >
+
+                        <div className="notification-icon">
+                          🔔
+                        </div>
+
+                        <div className="notification-content">
+
+                          <p>
+                            {notification.message}
+                          </p>
+
+                          <small>
+                            {new Date(
+                              notification.createdAt
+                            ).toLocaleString()}
+                          </small>
+
+                        </div>
+
+                      </div>
+
+
+                      {/* DELETE */}
+
+                      <button
+                        className="notification-delete-btn"
+                        onClick={(e) => {
+
+                          e.stopPropagation();
+
+                          deleteNotification(
                             notification.id
                           );
 
-                        }
-
-                      }}
-                    >
-
-                      <div className="notification-icon">
-                        🔔
-                      </div>
-
-                      <div className="notification-content">
-
-                        <p>
-                          {notification.message}
-                        </p>
-
-                        <small>
-                          {new Date(
-                            notification.createdAt
-                          ).toLocaleString()}
-                        </small>
-
-                      </div>
+                        }}
+                        title="Delete notification"
+                      >
+                        🗑
+                      </button>
 
                     </div>
 
-
-                    {/* DELETE BUTTON */}
-
-                    <button
-                      className="notification-delete-btn"
-                      onClick={(e) => {
-
-                        e.stopPropagation();
-
-                        deleteNotification(
-                          notification.id
-                        );
-
-                      }}
-                      title="Delete notification"
-                    >
-                      🗑
-                    </button>
-
-                  </div>
-
-                ))
+                  )
+                )
 
               )}
-
-            
 
             </div>
 
@@ -390,8 +449,8 @@ function Navbar({
 
 
         {/* =========================
-                    LOGOUT
-                ========================= */}
+            LOGOUT
+        ========================= */}
 
         <button
           onClick={() => {
@@ -401,13 +460,16 @@ function Navbar({
             localStorage.clear();
 
             setTimeout(() => {
+
               navigate("/login");
+
             }, 2000);
 
           }}
         >
           Logout
         </button>
+
       </div>
 
     </div>

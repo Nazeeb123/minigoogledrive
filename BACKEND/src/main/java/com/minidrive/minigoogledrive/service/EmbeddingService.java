@@ -2,28 +2,32 @@ package com.minidrive.minigoogledrive.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.minidrive.minigoogledrive.model.DocumentChunk;
 import com.minidrive.minigoogledrive.model.FileData;
-import com.minidrive.minigoogledrive.repository.FileDataRepository;
+import com.minidrive.minigoogledrive.repository.DocumentChunkRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class EmbeddingService {
 
     private final OllamaService ollamaService;
     private final FileTextService fileTextService;
-    private final FileDataRepository fileDataRepository;
+    private final DocumentChunkRepository documentChunkRepository;
     private final ObjectMapper objectMapper;
 
     public EmbeddingService(
             OllamaService ollamaService,
             FileTextService fileTextService,
-            FileDataRepository fileDataRepository,
+            DocumentChunkRepository documentChunkRepository,
             ObjectMapper objectMapper) {
 
         this.ollamaService = ollamaService;
         this.fileTextService = fileTextService;
-        this.fileDataRepository = fileDataRepository;
+        this.documentChunkRepository = documentChunkRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -38,48 +42,131 @@ public class EmbeddingService {
             return;
         }
 
-        if (fileData.getEmbedding() != null
-                && !fileData.getEmbedding().isBlank()) {
-            return;
-        }
+        System.out.println("=================================");
+        System.out.println("RAG EMBEDDING STARTED");
+        System.out.println("FILE: " + fileData.getFileName());
+        System.out.println("=================================");
+
+        // -----------------------------------------
+        // EXTRACT TEXT
+        // -----------------------------------------
 
         String content = fileTextService.extractText(fileData);
 
-        System.out.println("FILE TEXT LENGTH: " +
-                (content == null ? "NULL" : content.length()));
-
-        if (content == null
-                || content.trim().isEmpty()) {
+        if (content == null || content.trim().isEmpty()) {
 
             System.out.println("NO TEXT EXTRACTED");
 
             return;
         }
-        // Avoid sending an extremely large document
-        if (content.length() > 30000) {
-            content = content.substring(0, 30000);
-        }
 
-        double[] embedding = ollamaService.createEmbedding(content);
         System.out.println(
-                "EMBEDDING LENGTH: " + embedding.length);
+                "TOTAL TEXT LENGTH: " + content.length());
 
-        try {
+        // -----------------------------------------
+        // DELETE OLD CHUNKS
+        // -----------------------------------------
 
-            String embeddingJson = objectMapper.writeValueAsString(embedding);
+        documentChunkRepository.deleteByFile(fileData);
 
-            fileData.setEmbedding(embeddingJson);
+        // -----------------------------------------
+        // CREATE CHUNKS
+        // -----------------------------------------
 
-            fileDataRepository.save(fileData);
+        List<String> chunks = createChunks(content);
 
-            System.out.println(
-                    "EMBEDDING CREATED: "
-                            + fileData.getFileName());
+        System.out.println(
+                "TOTAL CHUNKS CREATED: " + chunks.size());
 
-        } catch (JsonProcessingException e) {
+        // -----------------------------------------
+        // EMBED EACH CHUNK
+        // -----------------------------------------
 
-            throw new RuntimeException(
-                    "Could not save file embedding", e);
+        int chunkIndex = 0;
+
+        for (String chunkText : chunks) {
+
+            try {
+
+                System.out.println(
+                        "Creating embedding for chunk: "
+                                + chunkIndex);
+
+                double[] embedding = ollamaService.createEmbedding(chunkText);
+
+                String embeddingJson = objectMapper.writeValueAsString(embedding);
+
+                DocumentChunk chunk = new DocumentChunk();
+
+                chunk.setFile(fileData);
+                chunk.setContent(chunkText);
+                chunk.setEmbedding(embeddingJson);
+                chunk.setChunkIndex(chunkIndex);
+
+                documentChunkRepository.save(chunk);
+
+                System.out.println(
+                        "CHUNK SAVED: "
+                                + chunkIndex
+                                + " | EMBEDDING DIMENSIONS: "
+                                + embedding.length);
+
+                chunkIndex++;
+
+            } catch (JsonProcessingException e) {
+
+                throw new RuntimeException(
+                        "Could not save embedding for chunk "
+                                + chunkIndex,
+                        e);
+            }
         }
+
+        System.out.println("=================================");
+        System.out.println("RAG EMBEDDING COMPLETED");
+        System.out.println("FILE: " + fileData.getFileName());
+        System.out.println("CHUNKS: " + chunks.size());
+        System.out.println("=================================");
+    }
+
+    // =========================================================
+    // TEXT CHUNKING
+    // =========================================================
+
+    private List<String> createChunks(String text) {
+
+        List<String> chunks = new ArrayList<>();
+
+        text = text.trim();
+
+        // Around 1500 characters per chunk
+        int chunkSize = 1500;
+
+        // Small overlap between chunks
+        int overlap = 200;
+
+        int start = 0;
+
+        while (start < text.length()) {
+
+            int end = Math.min(
+                    start + chunkSize,
+                    text.length());
+
+            String chunk = text.substring(start, end).trim();
+
+            if (!chunk.isEmpty()) {
+
+                chunks.add(chunk);
+            }
+
+            if (end >= text.length()) {
+                break;
+            }
+
+            start = end - overlap;
+        }
+
+        return chunks;
     }
 }
