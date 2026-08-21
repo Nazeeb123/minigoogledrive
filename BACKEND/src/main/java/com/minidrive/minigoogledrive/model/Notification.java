@@ -3,6 +3,7 @@ package com.minidrive.minigoogledrive.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import jakarta.persistence.Column;
 
 @Entity
 public class Notification {
@@ -13,8 +14,8 @@ public class Notification {
 
     private String message;
 
-    private boolean read = false;
-
+    @Column(name = "is_read")
+    private boolean read;
     private LocalDateTime createdAt;
 
     @ManyToOne

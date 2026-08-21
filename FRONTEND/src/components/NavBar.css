@@ -1,203 +1,322 @@
+/* =========================================================
+   NAVBAR
+========================================================= */
+
 .navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #6a5acd;
-  /* theme color */
-  color: white;
-  padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: #6a5acd;
+    color: white;
+
+    padding: 12px 24px;
+
+    min-height: 64px;
+    box-sizing: border-box;
+
+    position: relative;
 }
+
+
+/* =========================================================
+   NAVBAR TITLE
+========================================================= */
 
 .navbar h2 {
-  font-size: 22px;
-  font-weight: bold;
-  margin: 0;
-   color: #14b8a6;
+    font-size: 22px;
+    font-weight: bold;
 
-  letter-spacing: 0.5px;
+    margin: 0;
+
+    color: #111;
+
+    letter-spacing: 0.5px;
+
+    white-space: nowrap;
 }
 
-/* Search container with icon + input */
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
 .search-container {
-  flex: 1;
-  /* takes center space */
-  margin: 0 40px;
-  /* spacing between logo and right side */
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  padding: 0 12px;
+    flex: 1;
+
+    margin: 0 40px;
+
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    background: #fff;
+
+    border-radius: 10px;
+
+    border: 1px solid #ccc;
+
+    padding: 0 12px;
+
+    max-width: 520px;
+
+    height: 44px;
+
+    box-sizing: border-box;
 }
+
 
 .search-icon {
-  font-size: 18px;
-  color: #888;
-  margin-right: 8px;
+    font-size: 18px;
+
+    color: #888;
+
+    margin-right: 8px;
+
+    flex-shrink: 0;
 }
+
 
 .search-box {
-  flex: 1;
-  border: none;
-  outline: none;
-  padding: 12px 0;
-  /* taller input */
-  font-size: 16px;
-  background: transparent;
-  /* blends with container */
-}
+    flex: 1;
 
-.search-box::placeholder {
-  color: #aaa;
-}
-
-/* Right side (email + logout) */
-.navbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.navbar-right span {
-  font-size: 14px;
-}
-
-.navbar-right button {
-  background: #ff4d4d;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.navbar-right button:hover {
-  background: #e60000;
-}
-
-/* ============================= */
-/* NOTIFICATIONS */
-/* ============================= */
-
-.notification-container {
-    position: relative;
-}
-
-
-.notification-button {
-    position: relative;
+    width: 100%;
 
     border: none;
-    background: transparent;
 
-    font-size: 20px;
+    outline: none;
+
+    padding: 10px 0;
+
+    font-size: 15px;
+
+    background: transparent;
+}
+
+
+.search-box::placeholder {
+    color: #aaa;
+}
+
+
+/* =========================================================
+   RIGHT SIDE
+========================================================= */
+
+.navbar-right {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    white-space: nowrap;
+}
+
+
+.navbar-right>span {
+    font-size: 14px;
+
+    color: white;
+}
+
+
+/* =========================================================
+   NORMAL BUTTONS
+========================================================= */
+
+.navbar-right>button {
+    background: #ff4d4d;
+
+    border: none;
+
+    padding: 8px 12px;
+
+    border-radius: 6px;
+
+    color: white;
 
     cursor: pointer;
 
-    padding: 8px;
+    font-size: 13px;
 
-    color: #333;
+    transition: background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.navbar-right>button:hover {
+    background: #e60000;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   NOTIFICATION CONTAINER
+========================================================= */
+
+.notification-container {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+}
+
+
+/* =========================================================
+   NOTIFICATION BUTTON
+========================================================= */
+
+.notification-button {
+    width: 36px;
+    height: 36px;
+
+    padding: 0 !important;
+
+    border: none;
+
+    border-radius: 7px;
+
+    background: #ff4d4d;
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    position: relative;
+
+    font-size: 16px;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
 }
 
 
 .notification-button:hover {
-    color: #4285f4;
+    background: #e60000;
+
+    transform: translateY(-1px);
 }
 
 
-/* Red unread number */
+/* =========================================================
+   NOTIFICATION BADGE
+========================================================= */
 
 .notification-badge {
     position: absolute;
 
-    top: -2px;
-    right: -2px;
+    top: -6px;
+    right: -6px;
 
     min-width: 18px;
     height: 18px;
 
     padding: 0 4px;
 
-    border-radius: 50%;
+    background: #ff1744;
 
-    background: #e53935;
     color: white;
 
-    font-size: 11px;
+    border-radius: 50%;
+
+    font-size: 10px;
     font-weight: bold;
 
     display: flex;
     align-items: center;
     justify-content: center;
+
+    border: 2px solid #6a5acd;
+
+    box-sizing: border-box;
 }
 
 
-/* Dropdown */
+/* =========================================================
+   NOTIFICATION DROPDOWN
+========================================================= */
 
 .notification-dropdown {
     position: absolute;
 
-    top: 45px;
+    top: 46px;
     right: 0;
 
-    width: 350px;
+    width: 370px;
+
+    max-height: 420px;
 
     background: white;
 
     border-radius: 12px;
 
     box-shadow:
-        0 8px 25px rgba(0, 0, 0, 0.15);
+        0 10px 30px rgba(0, 0, 0, 0.18);
 
-    border: 1px solid #eee;
+    overflow-y: auto;
 
-    z-index: 1000;
+    overflow-x: hidden;
 
-    overflow: hidden;
+    z-index: 10000;
+
+    color: #222;
 }
 
 
-/* Header */
+/* =========================================================
+   NOTIFICATION HEADER
+========================================================= */
 
 .notification-dropdown h3 {
     margin: 0;
 
     padding: 16px;
 
-    border-bottom: 1px solid #eee;
-
     font-size: 17px;
+
+    color: #222;
+
+    background: white;
+
+    border-bottom: 1px solid #eeeeee;
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 2;
 }
 
 
-/* Empty */
-
-.no-notifications {
-    text-align: center;
-
-    padding: 25px;
-
-    color: #777;
-}
-
-
-/* Notification */
+/* =========================================================
+   NOTIFICATION ITEM
+========================================================= */
 
 .notification-item {
     display: flex;
 
-    gap: 12px;
+    align-items: center;
 
-    padding: 14px;
+    width: 100%;
 
-    cursor: pointer;
+    box-sizing: border-box;
 
-    border-bottom: 1px solid #f0f0f0;
+    padding: 12px 10px 12px 14px;
 
-    transition: background 0.2s;
+    border-bottom: 1px solid #eeeeee;
+
+    background: white;
+
+    transition:
+        background 0.2s ease;
 }
 
 
@@ -206,38 +325,345 @@
 }
 
 
-.notification-item.unread {
-    background: #eef5ff;
+/* =========================================================
+   NOTIFICATION MAIN
+========================================================= */
+
+.notification-main {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    flex: 1;
+
+    min-width: 0;
+
+    cursor: pointer;
 }
 
 
-.notification-item.read {
-    background: white;
-}
-
+/* =========================================================
+   BELL ICON 🔔
+========================================================= */
 
 .notification-icon {
-    font-size: 20px;
+    width: 30px;
+
+    min-width: 30px;
+
+    height: 30px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 18px;
+
+    flex-shrink: 0;
 }
 
+
+/* =========================================================
+   NOTIFICATION TEXT
+========================================================= */
 
 .notification-content {
     flex: 1;
+
+    min-width: 0;
+
+    overflow: hidden;
 }
 
 
 .notification-content p {
-    margin: 0 0 5px 0;
+    margin: 0 0 5px;
+
+    font-size: 13px;
+
+    line-height: 1.4;
+
+    color: #333;
+
+    word-break: break-word;
+
+    overflow-wrap: anywhere;
+}
+
+
+.notification-content small {
+    color: #999;
+
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   UNREAD NOTIFICATION
+========================================================= */
+
+.notification-item.unread {
+    background: #f4f8ff;
+}
+
+
+.notification-item.unread:hover {
+    background: #edf4ff;
+}
+
+
+/* =========================================================
+   READ NOTIFICATION
+========================================================= */
+
+.notification-item.read {
+    opacity: 0.75;
+}
+
+
+/* =========================================================
+   DELETE BUTTON 🗑
+========================================================= */
+
+.notification-delete-btn {
+    width: 32px;
+
+    height: 32px;
+
+    min-width: 32px;
+
+    flex-shrink: 0;
+
+    margin-left: 8px;
+
+    padding: 0 !important;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #777;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 15px;
+
+    opacity: 0;
+
+    transition:
+        opacity 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+/* Show dustbin when hovering notification */
+
+.notification-item:hover .notification-delete-btn {
+    opacity: 1;
+}
+
+
+/* Dustbin hover */
+
+.notification-delete-btn:hover {
+    background: #ffe5e5;
+
+    color: #e53935;
+
+    transform: scale(1.08);
+}
+
+
+/* Dustbin click */
+
+.notification-delete-btn:active {
+    transform: scale(0.95);
+}
+
+
+/* =========================================================
+   NO NOTIFICATIONS
+========================================================= */
+
+.no-notifications {
+    text-align: center;
+
+    padding: 30px 15px;
+
+    margin: 0;
+
+    color: #888;
 
     font-size: 14px;
+}
+
+
+/* =========================================================
+   NOTIFICATION SCROLLBAR
+========================================================= */
+
+.notification-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+
+.notification-dropdown::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+.notification-dropdown::-webkit-scrollbar-thumb {
+    background: #ccc;
+
+    border-radius: 10px;
+}
+
+
+.notification-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+
+/* =========================================================
+   LOGOUT OVERLAY
+========================================================= */
+
+.logout-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100vh;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    z-index: 99999;
+}
+
+
+/* =========================================================
+   LOGOUT BOX
+========================================================= */
+
+.logout-box {
+    text-align: center;
+}
+
+
+.logout-spinner {
+    width: 48px;
+
+    height: 48px;
+
+    border: 4px solid #ddd;
+
+    border-top: 4px solid #6a5acd;
+
+    border-radius: 50%;
+
+    animation: logoutSpin 0.8s linear infinite;
+
+    margin: 0 auto 20px;
+}
+
+
+.logout-box h2 {
+    margin: 0;
+
+    font-size: 24px;
 
     color: #222;
 }
 
 
-.notification-content small {
-    color: #888;
+.logout-box p {
+    margin-top: 8px;
 
-    font-size: 11px;
+    color: #777;
 }
 
+
+/* =========================================================
+   LOGOUT ANIMATION
+========================================================= */
+
+@keyframes logoutSpin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .navbar {
+        padding: 10px 16px;
+    }
+
+    .navbar h2 {
+        font-size: 18px;
+    }
+
+    .search-container {
+        margin: 0 20px;
+
+        max-width: 400px;
+    }
+
+    .navbar-right>span {
+        display: none;
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .navbar {
+        gap: 10px;
+    }
+
+    .search-container {
+        margin: 0 10px;
+
+        max-width: none;
+    }
+
+    .notification-dropdown {
+        width: 320px;
+
+        right: -80px;
+    }
+
+}

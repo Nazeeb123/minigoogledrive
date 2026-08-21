@@ -10,7 +10,39 @@ function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
+    // ==============================
+    // POPUP
+    // ==============================
+
+    const [popup, setPopup] = useState({
+        show: false,
+        message: "",
+        type: ""
+    });
+
+    const showPopup = (message, type = "success") => {
+
+        setPopup({
+            show: true,
+            message,
+            type
+        });
+
+        setTimeout(() => {
+
+            setPopup({
+                show: false,
+                message: "",
+                type: ""
+            });
+
+        }, 3000);
+
+    };
+
+
     const navigate = useNavigate();
+
 
     // ==============================
     // GOOGLE LOGIN
@@ -50,42 +82,77 @@ function Login() {
 
         };
 
-        // Give Google script time to load
-        const timer = setTimeout(initializeGoogle, 500);
+
+        const timer = setTimeout(
+            initializeGoogle,
+            500
+        );
+
 
         return () => clearTimeout(timer);
 
     }, []);
 
 
+    // ==============================
+    // GOOGLE LOGIN
+    // ==============================
+
     const handleGoogleLogin = async (response) => {
 
-        console.log("GOOGLE RESPONSE:", response);
+        console.log(
+            "GOOGLE RESPONSE:",
+            response
+        );
 
         try {
 
-            const result = await API.post("/google-login", {
+            const result = await API.post(
+                "/google-login",
+                {
+                    credential:
+                        response.credential
+                }
+            );
 
-                credential: response.credential
 
-            });
+            console.log(
+                "GOOGLE LOGIN RESPONSE:",
+                result.data
+            );
 
-            console.log("GOOGLE LOGIN RESPONSE:", result.data);
 
             localStorage.setItem(
                 "token",
                 result.data
             );
 
-            alert("Google login successful");
 
-            navigate("/dashboard");
+            showPopup(
+                "Google login successful",
+                "success"
+            );
+
+
+            setTimeout(() => {
+
+                navigate("/dashboard");
+
+            }, 800);
+
 
         } catch (error) {
 
-            console.log("GOOGLE LOGIN ERROR:", error);
+            console.log(
+                "GOOGLE LOGIN ERROR:",
+                error
+            );
 
-            alert("Google login failed");
+
+            showPopup(
+                "Google login failed",
+                "error"
+            );
 
         }
 
@@ -100,45 +167,78 @@ function Login() {
 
         if (!email || !password) {
 
-            alert("Please enter email and password");
+            showPopup(
+                "Please enter email and password",
+                "error"
+            );
 
             return;
 
         }
 
-        console.log("Email sent:", email);
-        console.log("Password sent:", password);
+
+        console.log(
+            "Email sent:",
+            email
+        );
+
+        console.log(
+            "Password sent:",
+            password
+        );
+
 
         try {
 
-            const response = await API.post("/login", {
+            const response = await API.post(
+                "/login",
+                {
+                    email,
+                    password
+                }
+            );
 
-                email,
-                password
 
-            });
+            console.log(
+                "LOGIN RESPONSE:",
+                response.data
+            );
 
-            console.log("LOGIN RESPONSE:", response.data);
 
             localStorage.setItem(
                 "token",
                 response.data
             );
 
+
             localStorage.setItem(
                 "email",
                 email
             );
 
-            alert("Login successful");
 
-            navigate("/dashboard");
+            showPopup(
+                "Login successful",
+                "success"
+            );
+
+
+            setTimeout(() => {
+
+                navigate("/dashboard");
+
+            }, 800);
+
 
         } catch (error) {
 
             console.log(error);
 
-            alert("Login failed");
+
+            showPopup(
+                "Login failed",
+                "error"
+            );
 
         }
 
@@ -150,7 +250,38 @@ function Login() {
         <div className="login-page">
 
 
-            {/* LEFT BRANDING */}
+            {/* ==============================
+                POPUP
+            ============================== */}
+
+            {popup.show && (
+
+                <div
+                    className={`login-popup ${popup.type}`}
+                >
+
+                    <span className="popup-icon">
+
+                        {popup.type === "success"
+                            ? "✓"
+                            : "✕"
+                        }
+
+                    </span>
+
+
+                    <span>
+                        {popup.message}
+                    </span>
+
+                </div>
+
+            )}
+
+
+            {/* ==============================
+                LEFT BRANDING
+            ============================== */}
 
             <div className="login-brand">
 
@@ -162,21 +293,29 @@ function Login() {
                         className="login-logo"
                     />
 
+
                     <h1>
                         Mini Google Drive
                     </h1>
+
 
                     <p className="brand-tagline">
                         Secure. Simple. Powerful.
                     </p>
 
+
                     <p className="brand-description">
+
                         Store, manage and share your files
                         securely from anywhere.
+
                     </p>
 
+
                     <div className="security-badge">
+
                         🛡️ Secure Cloud Storage
+
                     </div>
 
                 </div>
@@ -184,7 +323,9 @@ function Login() {
             </div>
 
 
-            {/* RIGHT LOGIN */}
+            {/* ==============================
+                RIGHT LOGIN
+            ============================== */}
 
             <div className="login-section">
 
@@ -207,7 +348,9 @@ function Login() {
 
 
                     <p className="login-subtitle">
+
                         Sign in to continue to your drive
+
                     </p>
 
 
@@ -218,6 +361,7 @@ function Login() {
                         <label>
                             Email
                         </label>
+
 
                         <input
                             type="email"
@@ -239,6 +383,7 @@ function Login() {
                             Password
                         </label>
 
+
                         <input
                             type="password"
                             placeholder="Enter your password"
@@ -249,7 +394,9 @@ function Login() {
                             onKeyDown={(e) => {
 
                                 if (e.key === "Enter") {
+
                                     handleLogin();
+
                                 }
 
                             }}
@@ -264,7 +411,9 @@ function Login() {
                         className="login-button"
                         onClick={handleLogin}
                     >
+
                         Sign In
+
                     </button>
 
 
@@ -272,7 +421,9 @@ function Login() {
 
                     <div className="login-divider">
 
-                        <span>OR</span>
+                        <span>
+                            OR
+                        </span>
 
                     </div>
 
@@ -294,11 +445,14 @@ function Login() {
                             New to Mini Google Drive?
                         </span>
 
+
                         <Link
                             to="/register"
                             className="signup-button"
                         >
+
                             Create an account
+
                         </Link>
 
                     </div>

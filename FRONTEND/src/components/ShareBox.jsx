@@ -1,122 +1,303 @@
+import "./ShareBox.css";
+
 import API from "../services/api";
+
 import {
     FaEnvelope,
     FaLink,
-    FaWhatsapp,
     FaLinkedin,
     FaTimes
 } from "react-icons/fa";
 
+import { useState } from "react";
+
+
 function ShareBox({ shareFile, setShareFile }) {
 
-    console.log("SHAREBOX RECEIVED:", shareFile);
+    const [email, setEmail] = useState("");
+    const [sending, setSending] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const [error, setError] = useState("");
+
+    if (!shareFile) {
+        return null;
+    }
+
     const link =
         `http://localhost:5173/shared/${shareFile.id}`;
 
 
+    // =========================
+    // SEND BY EMAIL
+    // =========================
+
     const shareEmail = async () => {
 
-        const email =
-            document.getElementById("shareEmail").value;
+        if (!email.trim()) {
 
+            setError("Please enter a recipient email address.");
+
+            return;
+        }
 
         try {
+
+            setSending(true);
+            setError("");
 
             await API.post(
                 `/files/${shareFile.id}/share`,
                 null,
                 {
                     params: {
-                        email: email
+                        email: email.trim()
                     }
                 }
             );
 
+            setSuccess(true);
 
-            alert("Shared successfully");
+            setEmail("");
 
-            setShareFile(null);
+            setTimeout(() => {
 
+                setSuccess(false);
+                setShareFile(null);
 
-        } catch (error) {
+            }, 2000);
 
-            console.log(error);
+        } catch (err) {
+
+            console.log(
+                "SHARE EMAIL ERROR:",
+                err
+            );
+
+            setError(
+                err.response?.data?.message ||
+                "Unable to send the file. Please try again."
+            );
+
+        } finally {
+
+            setSending(false);
 
         }
-
 
     };
 
 
+    // =========================
+    // COPY LINK
+    // =========================
+
+    const copyLink = async () => {
+
+        try {
+
+            await navigator.clipboard.writeText(link);
+
+            setSuccess(true);
+
+            setTimeout(() => {
+
+                setSuccess(false);
+
+            }, 2000);
+
+        } catch (err) {
+
+            console.log(
+                "COPY LINK ERROR:",
+                err
+            );
+
+        }
+
+    };
+
+
+    // =========================
+    // LINKEDIN
+    // =========================
+
+    const shareLinkedIn = () => {
+
+        const linkedInUrl =
+            `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`;
+
+        window.open(
+            linkedInUrl,
+            "_blank",
+            "width=700,height=600"
+        );
+
+    };
+
 
     return (
 
-        <div className="modal">
+        <div className="share-modal-overlay">
 
             <div className="share-modal-content">
 
-                <h2>
-                    Share {shareFile.fileName}
-                </h2>
 
+                {/* =========================
+                    SUCCESS MESSAGE
+                ========================= */}
+
+                {success && (
+
+                    <div className="share-success-popup">
+
+                        <div className="share-success-icon">
+                            ✓
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Successfully Shared
+                            </h3>
+
+                            <p>
+                                Your file has been shared successfully.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                )}
+
+
+                {/* =========================
+                    HEADER
+                ========================= */}
+
+                <div className="share-header">
+
+                    <h2>
+                        Share File
+                    </h2>
+
+                    <p>
+                        {shareFile.fileName}
+                    </p>
+
+                </div>
+
+
+                {/* =========================
+                    EMAIL
+                ========================= */}
+
+                <label>
+                    Recipient Email
+                </label>
 
                 <input
-                    id="shareEmail"
-                    placeholder="Enter email"
+                    type="email"
+                    placeholder="Enter recipient email"
+                    value={email}
+                    onChange={(e) =>
+                        setEmail(e.target.value)
+                    }
+                    disabled={sending}
                 />
 
 
-                <button className="share-btn email" onClick={shareEmail}>
+                {/* =========================
+                    ERROR
+                ========================= */}
+
+                {error && (
+
+                    <div className="share-error">
+
+                        ⚠️ {error}
+
+                    </div>
+
+                )}
+
+
+                {/* =========================
+                    SEND BY EMAIL
+                ========================= */}
+
+                <button
+                    className="share-btn email"
+                    onClick={shareEmail}
+                    disabled={sending}
+                >
+
                     <FaEnvelope />
-                    Send Email
+
+                    {sending
+                        ? "Sending..."
+                        : "Send by Email"
+                    }
+
                 </button>
 
+
+                {/* =========================
+                    COPY LINK
+                ========================= */}
 
                 <button
                     className="share-btn link"
-                    onClick={() => {
-                        navigator.clipboard.writeText(link);
-                        alert("Link copied");
-                    }}
+                    onClick={copyLink}
                 >
+
                     <FaLink />
-                    Copy Link
+
+                    Copy Share Link
+
                 </button>
 
 
-                <button
-                    className="share-btn whatsapp"
-                    onClick={() => {
-                        window.open(
-                            `https://wa.me/?text=${link}`
-                        );
-                    }}
-                >
-                    <FaWhatsapp />
-                    WhatsApp
-                </button>
-
+                {/* =========================
+                    LINKEDIN
+                ========================= */}
 
                 <button
                     className="share-btn linkedin"
-                    onClick={() => {
-                        window.open(
-                            `https://www.linkedin.com/sharing/share-offsite/?url=${link}`
-                        );
-                    }}
+                    onClick={shareLinkedIn}
                 >
+
                     <FaLinkedin />
-                    LinkedIn
+
+                    Share on LinkedIn
+
                 </button>
 
+
+                {/* =========================
+                    CANCEL
+                ========================= */}
 
                 <button
                     className="share-btn cancel"
-                    onClick={() => setShareFile(null)}
+                    onClick={() => {
+
+                        if (!sending) {
+
+                            setShareFile(null);
+
+                        }
+
+                    }}
+                    disabled={sending}
                 >
+
                     <FaTimes />
+
                     Cancel
+
                 </button>
+
 
             </div>
 
@@ -125,5 +306,6 @@ function ShareBox({ shareFile, setShareFile }) {
     );
 
 }
+
 
 export default ShareBox;

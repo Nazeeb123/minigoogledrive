@@ -27,6 +27,8 @@ function Dashboard() {
     const [shareFile, setShareFile] = useState(null);
 
     const [userEmail, setUserEmail] = useState("");
+    const navigate = useNavigate();
+    const [loggingOut, setLoggingOut] = useState(false);
 
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
@@ -34,8 +36,33 @@ function Dashboard() {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [popup, setPopup] = useState({
+        show: false,
+        message: "",
+        type: ""
+    });
 
-    const navigate = useNavigate();
+    const showPopup = (message, type = "success") => {
+
+        setPopup({
+            show: true,
+            message,
+            type
+        });
+
+        setTimeout(() => {
+
+            setPopup({
+                show: false,
+                message: "",
+                type: ""
+            });
+
+        }, 3000);
+
+    };
+
+
 
 
     // =====================================================
@@ -63,28 +90,68 @@ function Dashboard() {
 
         setSearch(value);
 
-        // Empty search
         if (value.trim() === "") {
-
             setSearchResults([]);
-
             return;
         }
 
         try {
 
-            const response = await API.get(
-                `/files/search?query=${encodeURIComponent(
-                    value.trim()
-                )}`
+            const query = value.trim();
+
+            // =========================================
+            // NORMAL SEARCH
+            // File name + Folder name
+            // =========================================
+
+            const normalResponse = await API.get(
+                `/files/search?query=${encodeURIComponent(query)}`
+            );
+
+            // =========================================
+            // SEMANTIC SEARCH
+            // Search by meaning/content
+            // =========================================
+
+            const semanticResponse = await API.get(
+                `/files/semantic-search?query=${encodeURIComponent(query)}`
             );
 
             console.log(
-                "SEARCH RESULTS:",
-                response.data
+                "NORMAL SEARCH:",
+                normalResponse.data
             );
 
-            setSearchResults(response.data);
+            console.log(
+                "SEMANTIC SEARCH:",
+                semanticResponse.data
+            );
+
+            // =========================================
+            // COMBINE RESULTS
+            // =========================================
+
+            const combinedResults = [
+                ...normalResponse.data,
+                ...semanticResponse.data
+            ];
+
+            // =========================================
+            // REMOVE DUPLICATES
+            // =========================================
+
+            const uniqueResults = Array.from(
+                new Map(
+                    combinedResults.map(
+                        item => [
+                            `${item.type}-${item.id}`,
+                            item
+                        ]
+                    )
+                ).values()
+            );
+
+            setSearchResults(uniqueResults);
 
         } catch (error) {
 
@@ -96,7 +163,6 @@ function Dashboard() {
             setSearchResults([]);
 
         }
-
     };
 
 
@@ -135,6 +201,8 @@ function Dashboard() {
 
             const response =
                 await API.get("/files/my");
+
+            console.log("MY FILES RESPONSE:", response.data);
 
             setFiles(response.data);
 
@@ -263,7 +331,10 @@ function Dashboard() {
                 `/files/${id}/star`
             );
 
-            alert("Star updated");
+            showPopup(
+                "Star updated",
+                "success"
+            );
 
             loadFiles();
 
@@ -272,6 +343,11 @@ function Dashboard() {
             console.log(
                 "STAR ERROR:",
                 error
+            );
+
+            showPopup(
+                "Failed to update star",
+                "error"
             );
 
         }
@@ -287,7 +363,10 @@ function Dashboard() {
 
         if (folderName.trim() === "") {
 
-            alert("Enter folder name");
+            showPopup(
+                "Enter folder name",
+                "error"
+            );
 
             return;
         }
@@ -304,11 +383,21 @@ function Dashboard() {
 
             loadFolders();
 
+            showPopup(
+                "Folder created successfully",
+                "success"
+            );
+
         } catch (error) {
 
             console.log(
                 "CREATE FOLDER ERROR:",
                 error
+            );
+
+            showPopup(
+                "Failed to create folder",
+                "error"
             );
 
         }
@@ -448,9 +537,28 @@ function Dashboard() {
 
         <div className="dashboard-container">
 
-            {/* =========================
-                    SIDEBAR
-                ========================= */}
+            {popup.show && (
+
+                <div
+                    className={`dashboard-popup ${popup.type}`}
+                >
+
+                    <span className="popup-icon">
+
+                        {popup.type === "success"
+                            ? "✓"
+                            : "✕"
+                        }
+
+                    </span>
+
+                    <span>
+                        {popup.message}
+                    </span>
+
+                </div>
+
+            )}
 
             <Sidebar />
 

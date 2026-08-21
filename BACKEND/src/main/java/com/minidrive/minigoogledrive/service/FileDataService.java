@@ -26,6 +26,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.poi.util.Units;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+
+import java.io.FileOutputStream;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -60,6 +73,12 @@ public class FileDataService {
         private FileVersionRepository fileVersionRepository;
         @Autowired
         private NotificationService notificationService;
+
+        @Autowired
+        private EmbeddingService embeddingService;
+
+        @Autowired
+        private EmailService emailService;
 
         private final String uploadDir = "uploads/";
 
@@ -138,7 +157,11 @@ public class FileDataService {
                         fileData.setUser(user);
                         fileData.setFolder(folder);
 
-                        return fileDataRepository.save(fileData);
+                        FileData savedFile = fileDataRepository.save(fileData);
+
+                        embeddingService.generateEmbedding(savedFile);
+
+                        return savedFile;
 
                 } catch (IOException e) {
 
@@ -231,7 +254,6 @@ public class FileDataService {
 
                 return "File moved to trash successfully";
         }
-
         // Search files
 
         public List<FileData> searchFiles(String fileName) {
@@ -403,7 +425,7 @@ public class FileDataService {
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-                return fileDataRepository.findBySharedUsers(user);
+                return fileDataRepository.findBySharedUsersAndDeletedFalse(user);
         }
 
         // Restore file from Trash
@@ -463,6 +485,64 @@ public class FileDataService {
         }
 
         // Share file with another user
+        // Send file directly to an external email address
+        public String sendFileByEmail(Long fileId, String recipientEmail) {
+
+                // Get logged-in user
+                User sender = getLoggedInUser();
+
+                // Find file
+                FileData fileData = fileDataRepository.findById(fileId)
+                                .orElseThrow(() -> new RuntimeException("File not found"));
+
+                // Only owner can send the file
+                if (!fileData.getUser().getId().equals(sender.getId())) {
+                        throw new RuntimeException(
+                                        "You can only send your own file by email");
+                }
+
+                // Don't allow files from Trash
+                if (fileData.isDeleted()) {
+                        throw new RuntimeException(
+                                        "You cannot send a file that is in Trash");
+                }
+
+                // Validate recipient email
+                if (recipientEmail == null ||
+                                recipientEmail.trim().isEmpty()) {
+
+                        throw new RuntimeException(
+                                        "Recipient email is required");
+                }
+
+                String email = recipientEmail.trim();
+
+                // Check physical file
+                File file = new File(fileData.getFilePath());
+
+                if (!file.exists()) {
+                        throw new RuntimeException(
+                                        "Physical file does not exist");
+                }
+
+                try {
+
+                        emailService.sendFile(
+                                        email,
+                                        fileData.getFilePath(),
+                                        fileData.getFileName());
+
+                        return "File sent successfully to " + email;
+
+                } catch (Exception e) {
+
+                        e.printStackTrace();
+
+                        throw new RuntimeException(
+                                        "Failed to send file by email: " + e.getMessage(),
+                                        e);
+                }
+        }
 
         // Share file with another user
         public String shareFile(Long id, String email) {
@@ -841,9 +921,17 @@ public class FileDataService {
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-                // Shared file
+                // Original shared file
                 FileData original = fileDataRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("File not found"));
+
+                // Check if this exact shared file is already in My Drive
+                boolean alreadyAdded = fileDataRepository
+                                .existsByOriginalFileIdAndUser(id, user);
+
+                if (alreadyAdded) {
+                        return "Already in My Drive";
+                }
 
                 // Create copy
                 FileData copy = new FileData();
@@ -861,10 +949,12 @@ public class FileDataService {
 
                 copy.setUser(user);
 
+                // Remember the original shared file
+                copy.setOriginalFileId(original.getId());
+
                 fileDataRepository.save(copy);
 
                 return "Added to My Drive";
-
         }
 
         public FileData getFileForAI(Long fileId) {
@@ -892,6 +982,751 @@ public class FileDataService {
                 }
 
                 return fileData;
+        }
+
+        public String getFileLocation(Long fileId) {
+
+                String email = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+                                .getName();
+
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
+
+                FileData file = fileDataRepository.findById(fileId)
+                                .orElseThrow(() -> new RuntimeException("File not found"));
+
+                // Security check
+                if (!file.getUser().getId().equals(user.getId())) {
+                        throw new RuntimeException("You cannot access this file");
+                }
+
+                Folder folder = file.getFolder();
+
+                // File is directly in My Drive
+                if (folder == null) {
+                        return "My Drive";
+                }
+
+                return "My Drive / " + folder.getFolderName();
+        }
+
+        @Transactional
+        public String removeFromShared(Long id) {
+
+                FileData original = fileDataRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("File not found"));
+
+                User user = getLoggedInUser();
+
+                if (!original.getSharedUsers().contains(user)) {
+                        throw new RuntimeException("This file is not shared with you");
+                }
+
+                // Create a personal Trash record
+                FileData trashFile = new FileData();
+
+                trashFile.setFileName(original.getFileName());
+                trashFile.setFilePath(original.getFilePath());
+                trashFile.setFileType(original.getFileType());
+                trashFile.setFileSize(original.getFileSize());
+
+                trashFile.setUploadDate(LocalDateTime.now());
+
+                trashFile.setDeleted(true);
+                trashFile.setStarred(false);
+                trashFile.setHiddenFromRecent(false);
+
+                // This Trash record belongs to the logged-in user
+                trashFile.setUser(user);
+
+                // Remember the original shared file
+                trashFile.setOriginalFileId(original.getId());
+
+                fileDataRepository.save(trashFile);
+
+                // Remove the user from Shared With Me
+                original.getSharedUsers().removeIf(
+                                sharedUser -> sharedUser.getId().equals(user.getId()));
+
+                fileDataRepository.save(original);
+
+                return "File moved to Trash";
+        }
+
+        public FileData convertFile(Long fileId, String format, String email) {
+
+                try {
+
+                        // =========================
+                        // GET USER
+                        // =========================
+
+                        User user = userRepository.findByEmail(email)
+                                        .orElseThrow(() -> new RuntimeException("User not found"));
+
+                        // =========================
+                        // GET ORIGINAL FILE
+                        // =========================
+
+                        FileData originalFile = fileDataRepository.findById(fileId)
+                                        .orElseThrow(() -> new RuntimeException("File not found"));
+
+                        // =========================
+                        // SECURITY
+                        // =========================
+
+                        if (!originalFile.getUser().getId().equals(user.getId())) {
+                                throw new RuntimeException(
+                                                "You can only convert your own files");
+                        }
+
+                        if (originalFile.isDeleted()) {
+                                throw new RuntimeException(
+                                                "You cannot convert a file in Trash");
+                        }
+
+                        // =========================
+                        // INPUT FILE
+                        // =========================
+
+                        Path inputPath = Paths.get(originalFile.getFilePath()).normalize();
+
+                        if (!Files.exists(inputPath)) {
+                                throw new RuntimeException(
+                                                "Physical file does not exist");
+                        }
+
+                        String originalName = originalFile.getFileName();
+
+                        String extension = getExtension(originalName);
+
+                        int dotIndex = originalName.lastIndexOf(".");
+
+                        String baseName = dotIndex > 0
+                                        ? originalName.substring(0, dotIndex)
+                                        : originalName;
+
+                        format = format.toLowerCase().trim();
+
+                        Path outputPath;
+
+                        // =========================================================
+                        // IMAGE -> PDF
+                        // =========================================================
+
+                        if (format.equals("pdf")) {
+
+                                if (!(extension.equals("jpg") ||
+                                                extension.equals("jpeg") ||
+                                                extension.equals("png") ||
+                                                extension.equals("webp"))) {
+
+                                        throw new RuntimeException(
+                                                        "Only JPG, JPEG, PNG and WEBP files can be converted to PDF");
+                                }
+
+                                BufferedImage image = ImageIO.read(inputPath.toFile());
+
+                                if (image == null) {
+                                        throw new RuntimeException(
+                                                        "Unable to read image");
+                                }
+
+                                outputPath = Paths.get(
+                                                uploadDir,
+                                                baseName + "_converted.pdf");
+
+                                createPdfFromImage(
+                                                image,
+                                                outputPath);
+                        }
+
+                        // =========================================================
+                        // PDF -> JPG / PNG
+                        // =========================================================
+
+                        else if (format.equals("jpg") ||
+                                        format.equals("png")) {
+
+                                if (!extension.equals("pdf")) {
+
+                                        throw new RuntimeException(
+                                                        "Only PDF files can be converted to images");
+                                }
+
+                                outputPath = Paths.get(
+                                                uploadDir,
+                                                baseName + "_converted." + format);
+
+                                try (PDDocument document = Loader.loadPDF(inputPath.toFile())) {
+
+                                        PDFRenderer renderer = new PDFRenderer(document);
+
+                                        BufferedImage image = renderer.renderImageWithDPI(
+                                                        0,
+                                                        150);
+
+                                        boolean success = ImageIO.write(
+                                                        image,
+                                                        format,
+                                                        outputPath.toFile());
+
+                                        if (!success) {
+                                                throw new RuntimeException(
+                                                                "Unable to create image");
+                                        }
+                                }
+                        }
+
+                        // =========================================================
+                        // IMAGE -> DOCX
+                        // =========================================================
+
+                        else if (format.equals("docx")) {
+
+                                if (!(extension.equals("jpg") ||
+                                                extension.equals("jpeg") ||
+                                                extension.equals("png") ||
+                                                extension.equals("webp"))) {
+
+                                        throw new RuntimeException(
+                                                        "Only JPG, JPEG, PNG and WEBP files can be converted to DOCX");
+                                }
+
+                                outputPath = Paths.get(
+                                                uploadDir,
+                                                baseName + "_converted.docx");
+
+                                createDocxFromImage(
+                                                inputPath,
+                                                outputPath,
+                                                extension);
+                        }
+
+                        // =========================================================
+                        // UNSUPPORTED
+                        // =========================================================
+
+                        else {
+
+                                throw new RuntimeException(
+                                                "Unsupported conversion format: " + format);
+                        }
+
+                        // =========================================================
+                        // CHECK OUTPUT
+                        // =========================================================
+
+                        File outputFile = outputPath.toFile();
+
+                        if (!outputFile.exists()) {
+
+                                throw new RuntimeException(
+                                                "Converted file was not created");
+                        }
+
+                        // =========================================================
+                        // CREATE DATABASE RECORD
+                        // =========================================================
+
+                        FileData convertedFile = new FileData();
+
+                        convertedFile.setFileName(
+                                        outputFile.getName());
+
+                        convertedFile.setFilePath(
+                                        outputPath.toString());
+
+                        convertedFile.setFileSize(
+                                        outputFile.length());
+
+                        convertedFile.setUploadDate(
+                                        LocalDateTime.now());
+
+                        convertedFile.setUser(user);
+
+                        convertedFile.setDeleted(false);
+
+                        convertedFile.setStarred(false);
+
+                        convertedFile.setHiddenFromRecent(false);
+
+                        // =========================
+                        // CONTENT TYPE
+                        // =========================
+
+                        if (format.equals("pdf")) {
+
+                                convertedFile.setFileType(
+                                                "application/pdf");
+
+                        } else if (format.equals("docx")) {
+
+                                convertedFile.setFileType(
+                                                "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+
+                        } else {
+
+                                convertedFile.setFileType(
+                                                "image/" + format);
+                        }
+
+                        // =========================
+                        // SAVE
+                        // =========================
+
+                        FileData savedFile = fileDataRepository.save(convertedFile);
+
+                        return savedFile;
+
+                } catch (Exception e) {
+
+                        e.printStackTrace();
+
+                        throw new RuntimeException(
+                                        "File conversion failed: "
+                                                        + e.getMessage(),
+                                        e);
+                }
+        }
+
+        private String getExtension(String fileName) {
+
+                int dotIndex = fileName.lastIndexOf(".");
+
+                if (dotIndex == -1) {
+                        return "";
+                }
+
+                return fileName
+                                .substring(dotIndex + 1)
+                                .toLowerCase();
+        }
+
+        private void createPdfFromImage(
+                        BufferedImage image,
+                        Path outputPath) throws IOException {
+
+                int width = image.getWidth();
+                int height = image.getHeight();
+
+                float pageWidth = 595;
+                float pageHeight = (float) height / width * pageWidth;
+
+                try (PDDocument document = new PDDocument()) {
+
+                        org.apache.pdfbox.pdmodel.common.PDRectangle pageSize = new org.apache.pdfbox.pdmodel.common.PDRectangle(
+                                        pageWidth,
+                                        pageHeight);
+
+                        org.apache.pdfbox.pdmodel.PDPage page = new org.apache.pdfbox.pdmodel.PDPage(
+                                        pageSize);
+
+                        document.addPage(page);
+
+                        Path temporaryImage = Paths.get(
+                                        outputPath.toString()
+                                                        + ".png");
+
+                        ImageIO.write(
+                                        image,
+                                        "png",
+                                        temporaryImage.toFile());
+
+                        org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject pdImage = org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
+                                        .createFromFile(
+                                                        temporaryImage.toString(),
+                                                        document);
+
+                        try (org.apache.pdfbox.pdmodel.PDPageContentStream contentStream = new org.apache.pdfbox.pdmodel.PDPageContentStream(
+                                        document,
+                                        page)) {
+
+                                contentStream.drawImage(
+                                                pdImage,
+                                                0,
+                                                0,
+                                                pageWidth,
+                                                pageHeight);
+                        }
+
+                        document.save(outputPath.toFile());
+
+                        Files.deleteIfExists(temporaryImage);
+                }
+        }
+
+        private void createDocxFromImage(
+                        Path imagePath,
+                        Path outputPath,
+                        String extension) throws Exception {
+
+                BufferedImage image = ImageIO.read(imagePath.toFile());
+
+                if (image == null) {
+                        throw new RuntimeException(
+                                        "Unable to read image");
+                }
+
+                String imageType;
+
+                if (extension.equals("jpg") ||
+                                extension.equals("jpeg")) {
+
+                        imageType = "jpg";
+
+                } else if (extension.equals("png")) {
+
+                        imageType = "png";
+
+                } else {
+
+                        // WEBP may not be supported by ImageIO
+                        // depending on installed plugins.
+                        throw new RuntimeException(
+                                        "WEBP to DOCX is not supported. Use JPG or PNG.");
+                }
+
+                int pictureType;
+
+                if (imageType.equals("jpg")) {
+
+                        pictureType = org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_JPEG;
+
+                } else {
+
+                        pictureType = org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_PNG;
+                }
+
+                int width = image.getWidth();
+                int height = image.getHeight();
+
+                int maxWidth = 600;
+
+                int finalWidth = maxWidth;
+
+                int finalHeight = (int) ((double) height /
+                                width *
+                                maxWidth);
+
+                try (XWPFDocument document = new XWPFDocument()) {
+
+                        XWPFParagraph paragraph = document.createParagraph();
+
+                        XWPFRun run = paragraph.createRun();
+
+                        try (var inputStream = Files.newInputStream(imagePath)) {
+
+                                run.addPicture(
+                                                inputStream,
+                                                pictureType,
+                                                imagePath.getFileName().toString(),
+                                                Units.toEMU(finalWidth),
+                                                Units.toEMU(finalHeight));
+                        }
+
+                        try (FileOutputStream outputStream = new FileOutputStream(
+                                        outputPath.toFile())) {
+
+                                document.write(outputStream);
+                        }
+                }
+        }
+
+        public FileData compressFile(
+                        Long fileId,
+                        long targetSize,
+                        String email) {
+
+                try {
+
+                        User user = userRepository.findByEmail(email)
+                                        .orElseThrow(() -> new RuntimeException("User not found"));
+
+                        FileData originalFile = fileDataRepository.findById(fileId)
+                                        .orElseThrow(() -> new RuntimeException("File not found"));
+
+                        if (!originalFile.getUser().getId()
+                                        .equals(user.getId())) {
+
+                                throw new RuntimeException(
+                                                "You can only compress your own files");
+                        }
+
+                        if (originalFile.isDeleted()) {
+
+                                throw new RuntimeException(
+                                                "You cannot compress a file in Trash");
+                        }
+
+                        Path inputPath = Paths.get(originalFile.getFilePath())
+                                        .normalize();
+
+                        if (!Files.exists(inputPath)) {
+
+                                throw new RuntimeException(
+                                                "Physical file does not exist");
+                        }
+
+                        long originalSize = Files.size(inputPath);
+
+                        if (targetSize >= originalSize) {
+
+                                throw new RuntimeException(
+                                                "Target size must be smaller than the original file");
+                        }
+
+                        String extension = getExtension(originalFile.getFileName());
+
+                        if (!(extension.equals("jpg") ||
+                                        extension.equals("jpeg") ||
+                                        extension.equals("png") ||
+                                        extension.equals("webp"))) {
+
+                                throw new RuntimeException(
+                                                "Currently only JPG, JPEG, PNG and WEBP files can be compressed");
+                        }
+
+                        BufferedImage image = ImageIO.read(inputPath.toFile());
+
+                        if (image == null) {
+
+                                throw new RuntimeException(
+                                                "Unable to read image");
+                        }
+
+                        String baseName = originalFile.getFileName()
+                                        .substring(
+                                                        0,
+                                                        originalFile.getFileName()
+                                                                        .lastIndexOf("."));
+
+                        Path outputPath = Paths.get(
+                                        uploadDir,
+                                        baseName +
+                                                        "_compressed." +
+                                                        extension);
+
+                        compressImageToTarget(
+                                        image,
+                                        outputPath,
+                                        extension,
+                                        targetSize);
+
+                        File outputFile = outputPath.toFile();
+
+                        if (!outputFile.exists()) {
+
+                                throw new RuntimeException(
+                                                "Compressed file was not created");
+                        }
+
+                        FileData compressedFile = new FileData();
+
+                        compressedFile.setFileName(
+                                        outputFile.getName());
+
+                        compressedFile.setFilePath(
+                                        outputPath.toString());
+
+                        compressedFile.setFileSize(
+                                        outputFile.length());
+
+                        compressedFile.setUploadDate(
+                                        LocalDateTime.now());
+
+                        compressedFile.setUser(user);
+
+                        compressedFile.setDeleted(false);
+
+                        compressedFile.setStarred(false);
+
+                        compressedFile.setHiddenFromRecent(false);
+
+                        if (extension.equals("jpg") ||
+                                        extension.equals("jpeg")) {
+
+                                compressedFile.setFileType(
+                                                "image/jpeg");
+
+                        } else if (extension.equals("png")) {
+
+                                compressedFile.setFileType(
+                                                "image/png");
+
+                        } else {
+
+                                compressedFile.setFileType(
+                                                "image/webp");
+                        }
+
+                        return fileDataRepository.save(
+                                        compressedFile);
+
+                } catch (Exception e) {
+
+                        e.printStackTrace();
+
+                        throw new RuntimeException(
+                                        "File compression failed: "
+                                                        + e.getMessage(),
+                                        e);
+                }
+        }
+
+        private void compressImageToTarget(
+                        BufferedImage image,
+                        Path outputPath,
+                        String extension,
+                        long targetSize) throws IOException {
+
+                if (extension.equals("png")) {
+
+                        // PNG doesn't have a simple quality setting.
+                        // Resize progressively if necessary.
+
+                        BufferedImage current = image;
+
+                        for (int i = 0; i < 5; i++) {
+
+                                ImageIO.write(
+                                                current,
+                                                "png",
+                                                outputPath.toFile());
+
+                                if (Files.size(outputPath) <= targetSize) {
+                                        return;
+                                }
+
+                                int newWidth = (int) (current.getWidth() * 0.8);
+
+                                int newHeight = (int) (current.getHeight() * 0.8);
+
+                                BufferedImage resized = new BufferedImage(
+                                                newWidth,
+                                                newHeight,
+                                                BufferedImage.TYPE_INT_RGB);
+
+                                var graphics = resized.createGraphics();
+
+                                graphics.drawImage(
+                                                current,
+                                                0,
+                                                0,
+                                                newWidth,
+                                                newHeight,
+                                                null);
+
+                                graphics.dispose();
+
+                                current = resized;
+                        }
+
+                        return;
+                }
+
+                float quality = 0.90f;
+
+                for (int i = 0; i < 15; i++) {
+
+                        writeJpeg(
+                                        image,
+                                        outputPath,
+                                        quality);
+
+                        long size = Files.size(outputPath);
+
+                        if (size <= targetSize) {
+                                return;
+                        }
+
+                        quality -= 0.05f;
+
+                        if (quality < 0.10f) {
+                                break;
+                        }
+                }
+
+                // If quality alone wasn't enough,
+                // progressively resize the image.
+
+                BufferedImage current = image;
+
+                for (int i = 0; i < 8; i++) {
+
+                        int newWidth = (int) (current.getWidth() * 0.8);
+
+                        int newHeight = (int) (current.getHeight() * 0.8);
+
+                        BufferedImage resized = new BufferedImage(
+                                        newWidth,
+                                        newHeight,
+                                        BufferedImage.TYPE_INT_RGB);
+
+                        var graphics = resized.createGraphics();
+
+                        graphics.drawImage(
+                                        current,
+                                        0,
+                                        0,
+                                        newWidth,
+                                        newHeight,
+                                        null);
+
+                        graphics.dispose();
+
+                        current = resized;
+
+                        writeJpeg(
+                                        current,
+                                        outputPath,
+                                        0.60f);
+
+                        if (Files.size(outputPath) <= targetSize) {
+                                return;
+                        }
+                }
+
+                throw new RuntimeException(
+                                "Unable to compress image to requested size");
+        }
+
+        private void writeJpeg(
+                        BufferedImage image,
+                        Path outputPath,
+                        float quality) throws IOException {
+
+                javax.imageio.ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg")
+                                .next();
+
+                javax.imageio.ImageWriteParam param = writer.getDefaultWriteParam();
+
+                param.setCompressionMode(
+                                javax.imageio.ImageWriteParam.MODE_EXPLICIT);
+
+                param.setCompressionQuality(
+                                quality);
+
+                try (
+                                FileOutputStream output = new FileOutputStream(
+                                                outputPath.toFile());
+
+                                javax.imageio.stream.ImageOutputStream ios = ImageIO.createImageOutputStream(output)) {
+
+                        writer.setOutput(ios);
+
+                        writer.write(
+                                        null,
+                                        new javax.imageio.IIOImage(
+                                                        image,
+                                                        null,
+                                                        null),
+                                        param);
+                }
+
+                writer.dispose();
         }
 
 }

@@ -66,4 +66,43 @@ public class OllamaService {
 
                 return askAI(prompt);
         }
+
+        public double[] createEmbedding(String text) {
+
+                Map<String, Object> request = Map.of(
+                                "model", "nomic-embed-text",
+                                "prompt", text);
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+                ResponseEntity<Map> response = restTemplate.postForEntity(
+                                "http://localhost:11434/api/embeddings",
+                                entity,
+                                Map.class);
+
+                if (response.getBody() == null) {
+                        throw new RuntimeException(
+                                        "No response from Ollama");
+                }
+
+                Object embedding = response.getBody().get("embedding");
+
+                if (embedding == null) {
+                        throw new RuntimeException(
+                                        "Ollama returned no embedding");
+                }
+
+                java.util.List<?> list = (java.util.List<?>) embedding;
+
+                double[] result = new double[list.size()];
+
+                for (int i = 0; i < list.size(); i++) {
+                        result[i] = ((Number) list.get(i)).doubleValue();
+                }
+
+                return result;
+        }
 }

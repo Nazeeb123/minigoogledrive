@@ -1,10 +1,10 @@
-
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import FileCard from "../components/FileCard";
 import API from "../services/api";
 import "./Dashboard.css";
+import "./Starred.css";
 
 function Starred() {
 
@@ -17,13 +17,19 @@ function Starred() {
 
             const response = await API.get("/files/starred");
 
-            console.log("STARRED RESPONSE:", response.data);
+            console.log(
+                "STARRED RESPONSE:",
+                response.data
+            );
 
             setFiles(response.data);
 
         } catch (error) {
 
-            console.log("STARRED ERROR:", error);
+            console.log(
+                "STARRED ERROR:",
+                error
+            );
 
         }
 
@@ -60,11 +66,13 @@ function Starred() {
 
                     {filteredFiles.length === 0 ? (
 
-                        <p>No starred files yet.</p>
+                        <p className="empty-state">
+                            No starred files
+                        </p>
 
                     ) : (
 
-                        filteredFiles.map((file) => (
+                        filteredFiles.map(file => (
 
                             <FileCard
                                 key={file.id}
@@ -88,4 +96,3 @@ function Starred() {
 }
 
 export default Starred;
-

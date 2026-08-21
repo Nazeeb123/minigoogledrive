@@ -5,6 +5,7 @@ import com.minidrive.minigoogledrive.model.ChatMessage;
 import com.minidrive.minigoogledrive.model.FileData;
 import com.minidrive.minigoogledrive.service.ChatService;
 import com.minidrive.minigoogledrive.service.FileDataService;
+import com.minidrive.minigoogledrive.service.FileTextService;
 import com.minidrive.minigoogledrive.service.OpenAIService;
 import com.minidrive.minigoogledrive.service.OllamaService;
 import net.sourceforge.tess4j.Tesseract;
@@ -35,6 +36,7 @@ import java.nio.file.Files;
 public class AIController {
 
     private final OpenAIService openAIService;
+    private final FileTextService fileTextService;
     private final FileDataService fileDataService;
     private final ChatService chatService;
     private final OllamaService ollamaService;
@@ -43,12 +45,14 @@ public class AIController {
             OpenAIService openAIService,
             FileDataService fileDataService,
             ChatService chatService,
-            OllamaService ollamaService) {
+            OllamaService ollamaService,
+            FileTextService fileTextService) {
 
         this.openAIService = openAIService;
         this.fileDataService = fileDataService;
         this.chatService = chatService;
         this.ollamaService = ollamaService;
+        this.fileTextService = fileTextService;
     }
     // =========================
     // NORMAL AI
@@ -150,8 +154,7 @@ public class AIController {
             // EXTRACT FILE CONTENT
             // =========================
 
-            String content = extractText(fileData);
-
+            String content = fileTextService.extractText(fileData);
             if (content == null
                     || content.trim().isEmpty()) {
 

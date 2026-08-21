@@ -5,81 +5,91 @@ import SearchResults from "../components/SearchResults";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 
-
-function SearchPage(){
+function SearchPage() {
 
     const [params] = useSearchParams();
 
     const query = params.get("query");
 
-
-    const [results,setResults] = useState([]);
-
-
-    useEffect(()=>{
-
-        loadResults();
-
-    },[]);
+    const [results, setResults] = useState([]);
+    const [loading, setLoading] = useState(true);
 
 
+    useEffect(() => {
 
-    const loadResults = async()=>{
+        if (query) {
+            loadResults();
+        } else {
+            setResults([]);
+            setLoading(false);
+        }
 
-        try{
+    }, [query]);
 
-            const response =
-            await API.get(
-                `/files/search?query=${query}`
+
+    const loadResults = async () => {
+
+        try {
+
+            setLoading(true);
+
+            const response = await API.get(
+                `/files/semantic-search?query=${encodeURIComponent(query)}`
             );
-
 
             setResults(response.data);
 
+        } catch (error) {
 
-        }
-        catch(error){
+            console.log("Search error:", error);
 
-            console.log(error);
+            setResults([]);
+
+        } finally {
+
+            setLoading(false);
 
         }
 
     };
 
 
-
-    return(
+    return (
 
         <div className="dashboard-container">
 
-
             <Sidebar />
-
 
             <div className="dashboard">
 
-
                 <Navbar />
-
 
                 <h2>
                     Search Results for "{query}"
                 </h2>
 
 
-                <SearchResults
-                    results={results}
-                />
+                {loading ? (
 
+                    <p>Searching...</p>
+
+                ) : results.length === 0 ? (
+
+                    <p>No matching files found.</p>
+
+                ) : (
+
+                    <SearchResults
+                        results={results}
+                    />
+
+                )}
 
             </div>
-
 
         </div>
 
     );
-
 }
-
 
 export default SearchPage;

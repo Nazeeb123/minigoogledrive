@@ -63,7 +63,7 @@ function Trash() {
 
             <div className="trash-container">
 
-                <h2>Trash</h2>
+                <h3>Trash</h3>
 
 
                 <div className="files-grid">
@@ -71,7 +71,7 @@ function Trash() {
                     {
                         trashedFiles.length === 0 ? (
 
-                            <p>No files in Trash</p>
+                            <p className="empty-trash">No files in Trash</p>
 
                         ) : (
 

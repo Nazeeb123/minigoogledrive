@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import FileCard from "../components/FileCard";
 import API from "../services/api";
 import "./Dashboard.css";
+import "./Shared.css";
 
 function Shared() {
     console.log("SHARED PAGE OPENED");
@@ -46,23 +47,27 @@ function Shared() {
 
                 <div className="files-grid">
 
-                    {files.map(file => (
-
-                        <FileCard
-                            key={file.id}
-                            file={file}
-                            isRecent={false}
-                            loadFiles={loadFiles}
-                            setShareFile={setShareFile}
-                            isShared={true}
-                        />
-
-                    ))}
+                    {files.length === 0 ? (
+                        <p className="empty-state">
+                            No files shared with you
+                        </p>
+                    ) : (
+                        files.map(file => (
+                            <FileCard
+                                key={file.id}
+                                file={file}
+                                isRecent={false}
+                                loadFiles={loadFiles}
+                                setShareFile={setShareFile}
+                                isShared={true}
+                            />
+                        ))
+                    )}
 
                 </div>
 
             </div>
-            
+
 
         </div>
     );

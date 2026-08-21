@@ -1,4 +1,4 @@
-
+import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import "./AI.css";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -20,6 +20,7 @@ function AI() {
     const navigate = useNavigate();
     const messagesEndRef = useRef(null);
     const textareaRef = useRef(null);
+    const [attachedFile, setAttachedFile] = useState(null);
    
    
 

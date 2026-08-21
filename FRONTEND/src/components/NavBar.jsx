@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { FaSearch, FaBell } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import "./Navbar.css";
-
 function Navbar({
   search,
   setSearch,
@@ -11,6 +11,9 @@ function Navbar({
 
   const email = localStorage.getItem("email");
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
+
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -19,11 +22,11 @@ function Navbar({
   const notificationRef = useRef(null);
 
   useEffect(() => {
+    if (!token) return;
 
     fetchNotifications();
     fetchUnreadCount();
-
-  }, []);
+  }, [token]);
 
   const fetchNotifications = async () => {
 
@@ -44,6 +47,48 @@ function Navbar({
 
       console.error(
         "Failed to fetch notifications:",
+        error
+      );
+
+    }
+
+  };
+  const deleteNotification = async (id) => {
+
+    try {
+
+      await axios.delete(
+        `http://localhost:8080/notifications/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      // Remove notification from UI
+      setNotifications(prev =>
+        prev.filter(notification => notification.id !== id)
+      );
+
+      // Update unread count if deleted notification was unread
+      const deletedNotification =
+        notifications.find(
+          notification => notification.id === id
+        );
+
+      if (deletedNotification && !deletedNotification.read) {
+
+        setUnreadCount(prev =>
+          Math.max(0, prev - 1)
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Failed to delete notification:",
         error
       );
 
@@ -155,6 +200,21 @@ function Navbar({
   return (
 
     <div className="navbar">
+      {loggingOut && (
+        <div className="logout-overlay">
+
+          <div className="logout-box">
+
+            <div className="logout-spinner"></div>
+
+            <h2>Logging out...</h2>
+
+            <p>Please wait</p>
+
+          </div>
+
+        </div>
+      )}
 
       <h2>
         Mini Google Drive
@@ -242,7 +302,6 @@ function Navbar({
                 Notifications
               </h3>
 
-
               {notifications.length === 0 ? (
 
                 <p className="no-notifications">
@@ -251,22 +310,21 @@ function Navbar({
 
               ) : (
 
-                notifications.map(
-                  notification => (
+                notifications.map((notification) => (
+
+                  <div
+                    key={notification.id}
+                    className={`notification-item ${notification.read ? "read" : "unread"
+                      }`}
+                  >
+
+                    {/* NOTIFICATION CONTENT */}
 
                     <div
-                      key={notification.id}
-                      className={
-                        `notification-item ${notification.read
-                          ? "read"
-                          : "unread"
-                        }`
-                      }
+                      className="notification-main"
                       onClick={() => {
 
-                        if (
-                          !notification.read
-                        ) {
+                        if (!notification.read) {
 
                           markNotificationRead(
                             notification.id
@@ -281,13 +339,10 @@ function Navbar({
                         🔔
                       </div>
 
-
                       <div className="notification-content">
 
                         <p>
-                          {
-                            notification.message
-                          }
+                          {notification.message}
                         </p>
 
                         <small>
@@ -300,10 +355,32 @@ function Navbar({
 
                     </div>
 
-                  )
-                )
+
+                    {/* DELETE BUTTON */}
+
+                    <button
+                      className="notification-delete-btn"
+                      onClick={(e) => {
+
+                        e.stopPropagation();
+
+                        deleteNotification(
+                          notification.id
+                        );
+
+                      }}
+                      title="Delete notification"
+                    >
+                      🗑
+                    </button>
+
+                  </div>
+
+                ))
 
               )}
+
+            
 
             </div>
 
@@ -319,14 +396,18 @@ function Navbar({
         <button
           onClick={() => {
 
+            setLoggingOut(true);
+
             localStorage.clear();
-            window.location.reload();
+
+            setTimeout(() => {
+              navigate("/login");
+            }, 2000);
 
           }}
         >
           Logout
         </button>
-
       </div>
 
     </div>
