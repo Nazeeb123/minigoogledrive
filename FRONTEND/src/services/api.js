@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: "https://minigoogledrive-backend.onrender.com",
+    baseURL: "https://minigoogledrive-1.onrender.com",
 });
 
 API.interceptors.request.use(
