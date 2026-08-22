@@ -1,0 +1,17 @@
+target/
+uploads/
+
+.mvn/wrapper/maven-wrapper.jar
+
+.env
+*.env
+*.log
+
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+
+.DS_Store
+Thumbs.db

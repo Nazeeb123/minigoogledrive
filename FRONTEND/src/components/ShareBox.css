@@ -1,0 +1,362 @@
+/* =========================
+   SHARE MODAL OVERLAY
+========================= */
+
+.share-modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    z-index: 9999;
+}
+
+
+/* =========================
+   SHARE MODAL
+========================= */
+
+.share-modal-content {
+    position: relative;
+
+    width: 420px;
+    max-width: 90%;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    padding: 28px;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.25);
+
+    animation: shareModalIn 0.2s ease-out;
+}
+
+
+@keyframes shareModalIn {
+
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.share-header {
+    margin-bottom: 22px;
+}
+
+.share-header h2 {
+    margin: 0;
+
+    font-size: 22px;
+
+    color: #1f2937;
+}
+
+.share-header p {
+    margin-top: 7px;
+
+    font-size: 14px;
+
+    color: #6b7280;
+
+    word-break: break-word;
+}
+
+
+/* =========================
+   LABEL
+========================= */
+
+.share-modal-content label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: #374151;
+}
+
+
+/* =========================
+   EMAIL INPUT
+========================= */
+
+.share-modal-content input {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 14px;
+
+    margin-bottom: 15px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 9px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    transition: 0.2s;
+}
+
+.share-modal-content input:focus {
+
+    border-color: #4285f4;
+
+    box-shadow:
+        0 0 0 3px rgba(66, 133, 244, 0.12);
+}
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+.share-btn {
+
+    width: 100%;
+
+    height: 45px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    margin-top: 10px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+
+.share-btn:hover {
+
+    transform: translateY(-1px);
+
+}
+
+
+/* EMAIL */
+
+.share-btn.email {
+
+    background: #4285f4;
+
+    color: white;
+}
+
+.share-btn.email:hover {
+
+    background: #3367d6;
+}
+
+
+/* LINK */
+
+.share-btn.link {
+
+    background: #f3f4f6;
+
+    color: #374151;
+}
+
+
+/* LINKEDIN */
+
+.share-btn.linkedin {
+
+    background: #0a66c2;
+
+    color: white;
+}
+
+.share-btn.linkedin:hover {
+
+    background: #084f96;
+}
+
+
+/* CANCEL */
+
+.share-btn.cancel {
+
+    background: transparent;
+
+    color: #6b7280;
+
+    border: 1px solid #e5e7eb;
+
+    margin-top: 16px;
+}
+
+
+/* =========================
+   ERROR
+========================= */
+
+.share-error {
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+
+    border: 1px solid #fecaca;
+
+    padding: 10px 12px;
+
+    border-radius: 8px;
+
+    font-size: 13px;
+
+    margin-bottom: 10px;
+}
+
+
+/* =========================
+   SUCCESS POPUP
+========================= */
+
+.share-success-popup {
+
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    width: 330px;
+
+    background: white;
+
+    border-radius: 16px;
+
+    padding: 25px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    box-shadow:
+        0 15px 50px rgba(0, 0, 0, 0.25);
+
+    border: 1px solid #e5e7eb;
+
+    z-index: 20;
+
+    animation: successPopup 0.25s ease-out;
+}
+
+
+@keyframes successPopup {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translate(-50%, -50%) scale(0.9);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translate(-50%, -50%) scale(1);
+
+    }
+
+}
+
+
+.share-success-icon {
+
+    width: 45px;
+
+    height: 45px;
+
+    min-width: 45px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+
+    color: white;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 25px;
+
+    font-weight: bold;
+}
+
+
+.share-success-popup h3 {
+
+    margin: 0 0 5px;
+
+    font-size: 16px;
+
+    color: #111827;
+}
+
+
+.share-success-popup p {
+
+    margin: 0;
+
+    font-size: 13px;
+
+    color: #6b7280;
+
+    line-height: 1.4;
+}

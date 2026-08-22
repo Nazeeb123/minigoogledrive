@@ -1,0 +1,653 @@
+/* =========================
+   RESET
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+
+/* =========================
+   MAIN PAGE
+========================= */
+
+.login-page {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    background: #f7f9fc;
+}
+
+
+/* =========================
+   LEFT BRAND SECTION
+========================= */
+
+.login-brand {
+    width: 52%;
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: linear-gradient(135deg,
+            #eef5ff 0%,
+            #e6f0ff 50%,
+            #f8fbff 100%);
+
+    padding: 50px;
+}
+
+
+.brand-content {
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+}
+
+
+/* =========================
+   LOGO
+========================= */
+
+.login-logo {
+    width: 125px;
+    height: 125px;
+    object-fit: contain;
+
+    background: #ffffff;
+    border-radius: 50%;
+    padding: 10px;
+
+    box-shadow:
+        0 4px 15px rgba(20, 45, 80, 0.15);
+
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.12));
+
+    box-sizing: border-box;
+
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.login-logo:hover {
+    transform: translateY(-5px) scale(1.03);
+
+    box-shadow:
+        0 10px 25px rgba(20, 45, 80, 0.25);
+}
+
+/* =========================
+   BRAND TEXT
+========================= */
+
+.brand-content h1 {
+    margin: 0;
+
+    font-size: 36px;
+    font-weight: 700;
+
+    color: #172b4d;
+
+    letter-spacing: -0.8px;
+}
+
+
+.brand-tagline {
+    margin: 12px 0 0;
+
+    font-size: 18px;
+    font-weight: 600;
+
+    color: #2463b5;
+}
+
+
+.brand-description {
+    max-width: 430px;
+
+    margin: 16px auto 25px;
+
+    font-size: 15px;
+    line-height: 1.7;
+
+    color: #64748b;
+}
+
+
+/* =========================
+   SECURITY BADGE
+========================= */
+
+.security-badge {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 10px 18px;
+
+    border-radius: 30px;
+
+    background: rgba(255, 255, 255, 0.8);
+
+    border: 1px solid #dbe7f5;
+
+    color: #526581;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    box-shadow:
+        0 5px 20px rgba(36, 99, 181, 0.06);
+}
+
+
+/* =========================
+   LOGIN SECTION
+========================= */
+
+.login-section {
+    width: 48%;
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 40px;
+}
+
+
+/* =========================
+   LOGIN CARD
+========================= */
+
+.login-card {
+    width: 100%;
+    max-width: 430px;
+
+    background: #ffffff;
+
+    padding: 42px;
+
+    border-radius: 18px;
+
+    border: 1px solid #e5eaf0;
+
+    box-shadow:
+        0 15px 45px rgba(15, 23, 42, 0.08);
+}
+
+
+/* =========================
+   MOBILE LOGO
+========================= */
+
+.mobile-logo {
+    display: none;
+}
+
+
+/* =========================
+   HEADING
+========================= */
+
+.login-card h2 {
+    margin: 0;
+
+    color: #172b4d;
+
+    font-size: 28px;
+    font-weight: 700;
+
+    letter-spacing: -0.5px;
+}
+
+
+.login-subtitle {
+    margin: 8px 0 30px;
+
+    color: #718096;
+
+    font-size: 14px;
+}
+
+
+/* =========================
+   INPUT GROUP
+========================= */
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+
+.input-group label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #334155;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+.input-group input {
+    width: 100%;
+    height: 48px;
+
+    padding: 0 14px;
+
+    border: 1px solid #d9e1ea;
+
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    color: #1e293b;
+
+    font-size: 14px;
+
+    outline: none;
+
+    transition: all 0.2s ease;
+}
+
+
+.input-group input::placeholder {
+    color: #a0aec0;
+}
+
+
+.input-group input:hover {
+    border-color: #b8c5d4;
+}
+
+
+.input-group input:focus {
+    border-color: #2463b5;
+
+    box-shadow:
+        0 0 0 3px rgba(36, 99, 181, 0.1);
+}
+
+
+/* =========================
+   LOGIN BUTTON
+========================= */
+
+.login-button {
+    width: 100%;
+    height: 48px;
+
+    margin-top: 5px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: #2463b5;
+
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.login-button:hover {
+    background: #1d5399;
+
+    box-shadow:
+        0 7px 18px rgba(36, 99, 181, 0.2);
+
+    transform: translateY(-1px);
+}
+
+
+.login-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================
+   SIGN UP SECTION
+========================= */
+
+.signup-section {
+    margin-top: 25px;
+
+    padding-top: 22px;
+
+    border-top: 1px solid #edf1f5;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 8px;
+
+    text-align: center;
+}
+
+
+.signup-section span {
+    color: #718096;
+
+    font-size: 13px;
+}
+
+
+.signup-button {
+    color: #2463b5;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    text-decoration: none;
+
+    transition: color 0.2s ease;
+}
+
+
+.signup-button:hover {
+    color: #174a8b;
+
+    text-decoration: underline;
+}
+
+
+/* =========================
+   FOOTER
+========================= */
+
+.login-footer {
+    margin-top: 22px;
+
+    text-align: center;
+
+    color: #94a3b8;
+
+    font-size: 11px;
+}
+
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+
+    .login-brand {
+        width: 45%;
+        padding: 30px;
+    }
+
+    .login-section {
+        width: 55%;
+        padding: 25px;
+    }
+
+    .brand-content h1 {
+        font-size: 30px;
+    }
+
+    .login-logo {
+        width: 90px;
+        height: 90px;
+    }
+
+    .login-card {
+        padding: 35px;
+    }
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+    .login-page {
+        display: block;
+
+        min-height: 100vh;
+
+        background: #f7f9fc;
+    }
+
+
+    /* Hide desktop branding */
+
+    .login-brand {
+        display: none;
+    }
+
+
+    /* Full width login */
+
+    .login-section {
+        width: 100%;
+
+        min-height: 100vh;
+
+        padding: 25px 18px;
+
+        align-items: center;
+    }
+
+
+    .login-card {
+        max-width: 430px;
+
+        padding: 30px 24px;
+
+        border-radius: 15px;
+
+        box-shadow:
+            0 10px 35px rgba(15, 23, 42, 0.07);
+    }
+
+
+    /* Show mobile logo */
+
+    .mobile-logo {
+        display: flex;
+
+        justify-content: center;
+
+        margin-bottom: 18px;
+    }
+
+
+    .mobile-logo img {
+        width: 75px;
+        height: 75px;
+
+        object-fit: contain;
+    }
+
+
+    .login-card h2 {
+        text-align: center;
+
+        font-size: 25px;
+    }
+
+
+    .login-subtitle {
+        text-align: center;
+
+        margin-bottom: 25px;
+    }
+
+}
+
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 400px) {
+
+    .login-section {
+        padding: 18px 12px;
+    }
+
+    .login-card {
+        padding: 25px 20px;
+    }
+
+    .login-card h2 {
+        font-size: 23px;
+    }
+
+    .input-group input {
+        height: 46px;
+    }
+
+    .login-button {
+        height: 46px;
+    }
+
+}
+
+
+/* ==============================
+   LOGIN DIVIDER
+   ============================== */
+
+.login-divider {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin: 22px 0;
+    gap: 12px;
+}
+
+.login-divider::before,
+.login-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #dcdcdc;
+}
+
+.login-divider span {
+    font-size: 13px;
+    font-weight: 500;
+    color: #888;
+    white-space: nowrap;
+}
+
+
+/* ==============================
+   GOOGLE LOGIN
+   ============================== */
+
+.google-login-button {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* ==============================
+   LOGIN POPUP
+   ============================== */
+
+.login-popup {
+    position: fixed;
+    top: 25px;
+    right: 25px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 14px 20px;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    z-index: 9999;
+
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+
+    animation: popupSlide 0.3s ease;
+}
+
+
+/* SUCCESS */
+
+.login-popup.success {
+    background: #e8f8ee;
+    color: #187a3d;
+    border: 1px solid #b7e5c7;
+}
+
+
+/* ERROR */
+
+.login-popup.error {
+    background: #fdeaea;
+    color: #c62828;
+    border: 1px solid #f2b8b8;
+}
+
+
+/* ICON */
+
+.popup-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+
+    border-radius: 50%;
+
+    font-size: 13px;
+    font-weight: bold;
+}
+
+
+/* ANIMATION */
+
+@keyframes popupSlide {
+
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+}
+

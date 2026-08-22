@@ -1,0 +1,77 @@
+.trash-container {
+    flex: 1;
+    padding: 30px;
+    margin-left: 250px;
+    min-height: 100vh;
+    background: #f8f9fc;
+    box-sizing: border-box;
+}
+
+.trash-container h2 {
+    font-size: 28px;
+    margin-bottom: 25px;
+    color: #333;
+}
+
+
+/* File cards area */
+.trash-container .file-item {
+    width: 250px;
+    max-width: 250px;
+    background: white;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+
+/* arrange files in grid */
+.trash-container {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.trash-container>div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+
+/* Buttons */
+.dropdown-menu button {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    background: white;
+    cursor: pointer;
+    text-align: left;
+}
+
+
+.dropdown-menu button:hover {
+    background: #f1f1f1;
+}
+
+.empty-trash {
+    width: 100%;
+    min-height: 300px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    background: transparent;
+
+    border: none;
+
+    color: #5f6368;
+
+    font-size: 15px;
+    font-weight: 400;
+
+    text-align: center;
+}

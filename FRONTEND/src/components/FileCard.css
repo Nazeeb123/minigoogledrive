@@ -1,0 +1,1894 @@
+/* =========================================================
+   FILE LIST ROW
+   ========================================================= */
+
+.file-card {
+    width: 100%;
+    min-height: 64px;
+
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    border-radius: 0;
+
+    padding: 10px 16px;
+
+    display: grid;
+
+    grid-template-columns:
+        48px minmax(250px, 1fr) 120px 150px 130px 90px 40px;
+
+    align-items: center;
+
+    gap: 10px;
+
+    text-align: left;
+
+    box-shadow: none;
+
+    cursor: default;
+
+    position: relative;
+
+    overflow: visible;
+
+    box-sizing: border-box;
+
+    transition: background 0.15s ease;
+}
+
+/* =========================================================
+   HOVER
+   ========================================================= */
+
+.file-card:hover {
+    transform: none;
+
+    background: #f8fafc;
+
+    box-shadow: none;
+}
+
+
+/* =========================================================
+   THREE DOT MENU
+   ========================================================= */
+
+.menu-container {
+    position: absolute;
+
+    right: 12px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    z-index: 50;
+}
+
+
+.menu-btn {
+    width: 34px;
+    height: 34px;
+
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 18px;
+
+    color: #555;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+
+.menu-btn:hover {
+    background: #e5e7eb;
+
+    color: #111;
+}
+
+
+/* =========================================================
+   DROPDOWN MENU
+   ========================================================= */
+
+.file-menu {
+    position: absolute;
+
+    top: 38px;
+
+    right: 0;
+
+    width: 210px;
+
+    background: #ffffff;
+
+    border: 1px solid #e0e0e0;
+
+    border-radius: 10px;
+
+    padding: 6px 0;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.15);
+
+    z-index: 99999;
+
+    overflow: hidden;
+
+    text-align: left;
+
+    white-space: nowrap;
+
+    box-sizing: border-box;
+}
+
+
+.file-menu button {
+    width: 100%;
+
+    min-height: 42px;
+
+    padding: 10px 15px;
+
+    border: none;
+
+    background: #ffffff;
+
+    color: #222;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    text-align: left;
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    box-sizing: border-box;
+
+    transition:
+        background 0.12s ease,
+        color 0.12s ease;
+}
+
+
+.file-menu button:hover {
+    background: #f3f4f6;
+
+    color: #111;
+}
+
+
+/* =========================================================
+   FILE ICON
+   ========================================================= */
+
+.file-icon {
+    width: 42px;
+    height: 42px;
+
+    margin: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    cursor: pointer;
+}
+
+
+.file-type-icon {
+    font-size: 34px;
+
+    transition: none;
+}
+
+
+/* Prevent shaking */
+
+.file-card:hover .file-type-icon {
+    transform: none;
+}
+
+
+/* =========================================================
+   FILE COLORS
+   ========================================================= */
+
+.pdf {
+    color: #e53935;
+}
+
+.image {
+    color: #43a047;
+}
+
+.video {
+    color: #8e24aa;
+}
+
+.audio {
+    color: #ff9800;
+}
+
+.word {
+    color: #1565c0;
+}
+
+.excel {
+    color: #2e7d32;
+}
+
+.ppt {
+    color: #ef6c00;
+}
+
+.zip {
+    color: #6d4c41;
+}
+
+.default {
+    color: #607d8b;
+}
+
+
+/* =========================================================
+   FILE NAME
+   ========================================================= */
+
+.file-card h4 {
+    margin: 0;
+
+    color: #202124;
+
+    font-size: 17px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    min-width: 0;
+}
+
+
+.file-card>p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 15px;
+
+    white-space: nowrap;
+}
+
+/* =========================================================
+   OPEN BUTTON
+   ========================================================= */
+
+.open-btn {
+    margin: 0;
+
+    width: auto;
+
+    border: none;
+
+    padding: 7px 12px;
+
+    border-radius: 7px;
+
+    background: #2563eb;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.15s ease;
+}
+
+
+.open-btn:hover {
+    background: #1d4ed8;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   RENAME BOX
+   ========================================================= */
+
+.rename-box {
+    position: absolute;
+
+    left: 60px;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    margin: 0;
+
+    width: auto;
+
+    box-sizing: border-box;
+
+    background: white;
+
+    z-index: 100;
+}
+
+
+.rename-box input {
+    width: 180px;
+
+    height: 32px;
+
+    padding: 4px 8px;
+
+    font-size: 13px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 6px;
+
+    outline: none;
+
+    box-sizing: border-box;
+}
+
+
+.rename-box input:focus {
+    border-color: #2563eb;
+}
+
+
+/* =========================================================
+   RENAME BUTTONS
+   ========================================================= */
+
+.save-rename-btn,
+.cancel-rename-btn {
+    width: 30px;
+
+    height: 30px;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    transition: opacity 0.15s ease;
+}
+
+
+.save-rename-btn {
+    background: #22c55e;
+
+    color: white;
+}
+
+
+.cancel-rename-btn {
+    background: #ef4444;
+
+    color: white;
+}
+
+
+.save-rename-btn:hover,
+.cancel-rename-btn:hover {
+    transform: none;
+
+    opacity: 0.9;
+}
+
+
+/* =========================================================
+   ADD TO MY DRIVE
+   ========================================================= */
+
+.add-drive-btn {
+    width: 170px;
+    height: 40px;
+
+    padding: 0 14px;
+
+    border: none;
+    border-radius: 6px;
+
+    background: #f1f3f4;
+    color: #202124;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    white-space: nowrap;
+    text-align: left;
+
+    cursor: pointer;
+    box-sizing: border-box;
+
+    transition: background 0.15s ease;
+}
+
+.add-drive-btn:hover {
+    background: #e8eaed;
+}
+
+
+.add-drive-btn:active {
+    transform: none;
+}
+
+.add-drive-btn:disabled {
+    cursor: default;
+    opacity: 0.7;
+}
+
+
+/* =========================================================
+   AI RENAME OVERLAY
+   ========================================================= */
+
+.ai-rename-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    z-index: 999999;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   AI RENAME MODAL
+   ========================================================= */
+
+.ai-rename-modal {
+    width: 430px;
+
+    max-width: calc(100vw - 40px);
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.25);
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+
+    position: relative;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   AI HEADER
+   ========================================================= */
+
+.ai-rename-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 22px;
+
+    border-bottom: 1px solid #eeeeee;
+
+    background: #ffffff;
+}
+
+
+.ai-rename-icon {
+    width: 48px;
+    height: 48px;
+
+    border-radius: 12px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 25px;
+
+    background: #f3f4f6;
+
+    flex-shrink: 0;
+}
+
+
+.ai-rename-header h2 {
+    margin: 0;
+
+    font-size: 20px;
+
+    color: #222;
+}
+
+
+.ai-rename-header p {
+    margin: 4px 0 0;
+
+    color: #777;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   AI BODY
+   ========================================================= */
+
+.ai-rename-body {
+    padding: 22px;
+}
+
+
+.ai-rename-body label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #444;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+
+.ai-current-name {
+    width: 100%;
+
+    padding: 12px;
+
+    margin-bottom: 20px;
+
+    background: #f7f7f7;
+
+    border: 1px solid #e5e5e5;
+
+    border-radius: 8px;
+
+    color: #333;
+
+    font-size: 14px;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+.ai-suggested-input {
+    width: 100%;
+
+    height: 42px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #cfcfcf;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    color: #222;
+
+    box-sizing: border-box;
+}
+
+
+.ai-suggested-input:focus {
+    border-color: #2563eb;
+}
+
+
+.ai-hint {
+    margin-top: 8px;
+
+    color: #777;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   AI LOADING
+   ========================================================= */
+
+.ai-loading {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 25px 10px;
+
+    text-align: center;
+}
+
+
+.ai-loading p {
+    margin-top: 12px;
+
+    color: #555;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   SPINNER
+   ========================================================= */
+
+.ai-spinner {
+    width: 34px;
+    height: 34px;
+
+    border: 4px solid #e5e7eb;
+
+    border-top: 4px solid #2563eb;
+
+    border-radius: 50%;
+
+    animation: ai-spin 0.8s linear infinite;
+}
+
+
+@keyframes ai-spin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* =========================================================
+   AI ERROR
+   ========================================================= */
+
+.ai-error {
+    padding: 12px;
+
+    background: #fef2f2;
+
+    border: 1px solid #fecaca;
+
+    border-radius: 8px;
+
+    color: #b91c1c;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   AI ACTIONS
+   ========================================================= */
+
+.ai-rename-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    padding: 16px 22px;
+
+    border-top: 1px solid #eeeeee;
+
+    background: #fafafa;
+}
+
+
+.ai-cancel-btn,
+.ai-confirm-btn {
+    padding: 10px 18px;
+
+    border-radius: 8px;
+
+    border: none;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    transition:
+        background 0.15s ease,
+        opacity 0.15s ease;
+}
+
+
+.ai-cancel-btn {
+    background: #e5e7eb;
+
+    color: #333;
+}
+
+
+.ai-cancel-btn:hover {
+    background: #d1d5db;
+}
+
+
+.ai-confirm-btn {
+    background: #2563eb;
+
+    color: white;
+}
+
+
+.ai-confirm-btn:hover {
+    background: #1d4ed8;
+}
+
+
+.ai-cancel-btn:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   GRID CONTAINERS
+   ========================================================= */
+
+.files-grid {
+    width: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow: visible;
+
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    border: 1px solid #e5e7eb;
+}
+
+
+.folders-grid {
+    overflow: visible;
+}
+
+
+/* =========================================================
+   FILE ACTION POPUP
+   ========================================================= */
+
+.file-popup {
+    position: fixed;
+
+    top: 25px;
+
+    right: 25px;
+
+    min-width: 260px;
+
+    padding: 14px 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    border-radius: 10px;
+
+    background: white;
+
+    color: #222;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.18);
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    z-index: 99999;
+
+    animation: popupSlide 0.25s ease;
+}
+
+
+.file-popup.success {
+    border-left: 5px solid #22c55e;
+}
+
+
+.file-popup.error {
+    border-left: 5px solid #ef4444;
+}
+
+
+.file-popup-icon {
+    font-size: 18px;
+
+    font-weight: bold;
+}
+
+
+.file-popup.success .file-popup-icon {
+    color: #22c55e;
+}
+
+
+.file-popup.error .file-popup-icon {
+    color: #ef4444;
+}
+
+
+@keyframes popupSlide {
+
+    from {
+        opacity: 0;
+
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform: translateX(0);
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .file-card {
+        grid-template-columns:
+            42px minmax(180px, 1fr) 90px 40px;
+    }
+
+    .file-card>p {
+        display: none;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .file-card {
+        grid-template-columns:
+            42px minmax(120px, 1fr) 40px;
+
+        padding: 9px 10px;
+    }
+
+    .open-btn {
+        display: none;
+    }
+
+}
+
+/* ==============================
+   FILE ROW COLUMNS
+============================== */
+
+.file-name-cell {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.file-name-cell h4 {
+    margin: 0;
+
+    color: #202124;
+
+    font-size: 17px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+.file-size-cell,
+.file-date-cell,
+.file-location-cell,
+.file-open-cell {
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+}
+
+
+.file-size-cell p,
+.file-date-cell p,
+.file-location-cell p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+/* ==============================
+   OPEN COLUMN
+============================== */
+
+.file-open-cell {
+    justify-content: flex-start;
+}
+
+
+/* ==============================
+   MENU
+============================== */
+
+.menu-container {
+    position: relative;
+
+    right: auto;
+    top: auto;
+
+    transform: none;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    z-index: 50;
+}
+
+/* =========================
+   EMAIL MODAL
+========================= */
+
+.email-modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 9999;
+
+    backdrop-filter: blur(3px);
+}
+
+.email-modal {
+    width: 420px;
+    max-width: 90%;
+
+    background: white;
+
+    border-radius: 18px;
+
+    padding: 30px;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.25);
+
+    animation: emailModalAppear 0.2s ease;
+}
+
+@keyframes emailModalAppear {
+
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+}
+
+.email-modal-icon {
+    width: 55px;
+    height: 55px;
+
+    margin: 0 auto 15px;
+
+    border-radius: 50%;
+
+    background: #eef4ff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 26px;
+}
+
+.email-modal h2 {
+    text-align: center;
+
+    margin: 0;
+
+    font-size: 24px;
+}
+
+.email-modal-description {
+    text-align: center;
+
+    color: #666;
+
+    margin: 10px 0 25px;
+
+    line-height: 1.5;
+}
+
+.email-modal label {
+    display: block;
+
+    font-weight: 600;
+
+    margin-bottom: 8px;
+}
+
+.email-modal input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 14px;
+
+    border: 1px solid #d5d5d5;
+
+    border-radius: 9px;
+
+    font-size: 15px;
+
+    outline: none;
+}
+
+.email-modal input:focus {
+    border-color: #4285f4;
+
+    box-shadow:
+        0 0 0 3px rgba(66, 133, 244, 0.12);
+}
+
+.email-modal-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 25px;
+}
+
+.email-cancel-btn,
+.email-send-btn {
+    border: none;
+
+    padding: 11px 18px;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.email-cancel-btn {
+    background: #f1f1f1;
+
+    color: #444;
+}
+
+.email-send-btn {
+    background: #4285f4;
+
+    color: white;
+}
+
+.email-send-btn:hover {
+    background: #3367d6;
+}
+
+.email-send-btn:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+/* =========================
+   EMAIL MODAL
+========================= */
+
+.email-modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 9999;
+
+    backdrop-filter: blur(3px);
+}
+
+.email-modal {
+    width: 420px;
+    max-width: 90%;
+
+    background: white;
+
+    border-radius: 18px;
+
+    padding: 30px;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.25);
+
+    animation: emailModalAppear 0.2s ease;
+}
+
+@keyframes emailModalAppear {
+
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+}
+
+.email-modal-icon {
+    width: 55px;
+    height: 55px;
+
+    margin: 0 auto 15px;
+
+    border-radius: 50%;
+
+    background: #eef4ff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 26px;
+}
+
+.email-modal h2 {
+    text-align: center;
+
+    margin: 0;
+
+    font-size: 24px;
+}
+
+.email-modal-description {
+    text-align: center;
+
+    color: #666;
+
+    margin: 10px 0 25px;
+
+    line-height: 1.5;
+}
+
+.email-modal label {
+    display: block;
+
+    font-weight: 600;
+
+    margin-bottom: 8px;
+}
+
+.email-modal input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 14px;
+
+    border: 1px solid #d5d5d5;
+
+    border-radius: 9px;
+
+    font-size: 15px;
+
+    outline: none;
+}
+
+.email-modal input:focus {
+    border-color: #4285f4;
+
+    box-shadow:
+        0 0 0 3px rgba(66, 133, 244, 0.12);
+}
+
+.email-modal-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 25px;
+}
+
+.email-cancel-btn,
+.email-send-btn {
+    border: none;
+
+    padding: 11px 18px;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.email-cancel-btn {
+    background: #f1f1f1;
+
+    color: #444;
+}
+
+.email-send-btn {
+    background: #4285f4;
+
+    color: white;
+}
+
+.email-send-btn:hover {
+    background: #3367d6;
+}
+
+.email-send-btn:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+/* =========================================
+   EMAIL SUCCESS OVERLAY
+========================================= */
+
+.email-success-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 99999;
+
+    backdrop-filter: blur(4px);
+}
+
+
+/* =========================================
+   EMAIL SUCCESS MODAL
+========================================= */
+
+.email-success-modal {
+    width: 420px;
+    max-width: 90%;
+
+    background: white;
+
+    border-radius: 18px;
+
+    padding: 35px 30px;
+
+    text-align: center;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.25);
+
+    animation: emailSuccessPop 0.25s ease-out;
+}
+
+
+/* =========================================
+   SUCCESS ICON
+========================================= */
+
+.email-success-icon {
+    width: 70px;
+    height: 70px;
+
+    margin: 0 auto 18px;
+
+    border-radius: 50%;
+
+    background: #e8f7ee;
+
+    color: #16a34a;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 38px;
+    font-weight: bold;
+}
+
+
+/* =========================================
+   TITLE
+========================================= */
+
+.email-success-modal h2 {
+    margin: 0 0 12px;
+
+    font-size: 22px;
+
+    color: #1f2937;
+}
+
+
+/* =========================================
+   DESCRIPTION
+========================================= */
+
+.email-success-modal p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 15px;
+
+    line-height: 1.6;
+}
+
+.email-success-modal p strong {
+    color: #374151;
+}
+
+.email-success-modal p span {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+
+/* =========================================
+   DONE BUTTON
+========================================= */
+
+.email-success-btn {
+    margin-top: 25px;
+
+    width: 100%;
+
+    padding: 12px 20px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: #2563eb;
+
+    color: white;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.email-success-btn:hover {
+    background: #1d4ed8;
+}
+
+
+/* =========================================
+   ANIMATION
+========================================= */
+
+@keyframes emailSuccessPop {
+
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+}
+
+/* ================================
+   SEND EMAIL MODAL
+================================ */
+
+.email-modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.5);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 100000;
+
+    backdrop-filter: blur(4px);
+}
+
+.email-modal {
+    width: 430px;
+    max-width: calc(100vw - 40px);
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    padding: 32px;
+
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
+
+    animation: emailModalAppear 0.2s ease-out;
+}
+
+.email-modal-icon {
+    width: 60px;
+    height: 60px;
+
+    margin: 0 auto 15px;
+
+    border-radius: 50%;
+
+    background: #eff6ff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 28px;
+}
+
+.email-modal h2 {
+    text-align: center;
+
+    margin: 0 0 10px;
+
+    font-size: 24px;
+
+    color: #1f2937;
+}
+
+.email-modal-description {
+    text-align: center;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+
+    margin-bottom: 25px;
+}
+
+.email-modal label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: #374151;
+}
+
+.email-modal input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 14px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 9px;
+
+    font-size: 15px;
+
+    outline: none;
+}
+
+.email-modal input:focus {
+    border-color: #2563eb;
+
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.email-modal-actions {
+    display: flex;
+
+    gap: 12px;
+
+    margin-top: 25px;
+}
+
+.email-cancel-btn,
+.email-send-btn {
+    flex: 1;
+
+    padding: 12px;
+
+    border-radius: 9px;
+
+    border: none;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.email-cancel-btn {
+    background: #f3f4f6;
+
+    color: #374151;
+}
+
+.email-send-btn {
+    background: #2563eb;
+
+    color: white;
+}
+
+.email-send-btn:hover {
+    background: #1d4ed8;
+}
+
+.email-send-btn:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+@keyframes emailModalAppear {
+
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+}
+
+/* =========================
+   COMPRESS FILE MODAL
+========================= */
+
+.compress-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 9999;
+
+    padding: 20px;
+}
+
+.compress-modal {
+    width: 430px;
+    max-width: 100%;
+
+    background: #ffffff;
+    border-radius: 18px;
+
+    padding: 28px;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+
+    animation: compressModalIn 0.2s ease-out;
+}
+
+@keyframes compressModalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Title */
+
+.compress-modal h2 {
+    margin: 0 0 8px;
+
+    font-size: 23px;
+    font-weight: 700;
+
+    color: #202124;
+}
+
+.compress-modal>p {
+    margin: 0 0 18px;
+
+    color: #5f6368;
+    font-size: 14px;
+
+    word-break: break-word;
+}
+
+/* Current file size */
+
+.current-size {
+    background: #f5f7fa;
+
+    border-radius: 10px;
+
+    padding: 13px 15px;
+
+    margin-bottom: 22px;
+
+    font-size: 14px;
+    color: #5f6368;
+}
+
+.current-size strong {
+    color: #202124;
+}
+
+/* Label */
+
+.compress-modal label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #202124;
+}
+
+/* Size input */
+
+.size-input {
+    display: flex;
+    gap: 10px;
+
+    margin-bottom: 20px;
+}
+
+.size-input input {
+    flex: 1;
+
+    height: 45px;
+
+    padding: 0 13px;
+
+    border: 1px solid #dadce0;
+    border-radius: 9px;
+
+    font-size: 15px;
+
+    outline: none;
+
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+.size-input input:focus {
+    border-color: #4285f4;
+
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.12);
+}
+
+.size-input select {
+    width: 90px;
+
+    height: 45px;
+
+    padding: 0 10px;
+
+    border: 1px solid #dadce0;
+    border-radius: 9px;
+
+    background: white;
+
+    font-size: 14px;
+
+    outline: none;
+
+    cursor: pointer;
+}
+
+.size-input select:focus {
+    border-color: #4285f4;
+}
+
+/* Success */
+
+.compress-success {
+    padding: 12px 14px;
+
+    margin-bottom: 15px;
+
+    border-radius: 9px;
+
+    background: #e6f4ea;
+
+    color: #137333;
+
+    font-size: 14px;
+}
+
+/* Error */
+
+.compress-error {
+    padding: 12px 14px;
+
+    margin-bottom: 15px;
+
+    border-radius: 9px;
+
+    background: #fce8e6;
+
+    color: #c5221f;
+
+    font-size: 14px;
+}
+
+/* Buttons */
+
+.compress-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 10px;
+}
+
+.compress-actions button {
+    height: 42px;
+
+    padding: 0 18px;
+}

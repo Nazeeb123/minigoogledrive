@@ -1,17 +1,30 @@
+# Java / Maven
 target/
-uploads/
+*.class
 
+# Maven wrapper
 .mvn/wrapper/maven-wrapper.jar
 
+# Environment / secrets
 .env
-*.env
-*.log
+.env.*
+!.env.example
 
-.vscode/
+# Spring / local config
+application-local.properties
+
+# Node
+node_modules/
+dist/
+
+# IDE
 .idea/
+.vscode/
 *.iml
-*.iws
-*.ipr
 
+# OS
 .DS_Store
 Thumbs.db
+
+# Uploaded files
+uploads/
