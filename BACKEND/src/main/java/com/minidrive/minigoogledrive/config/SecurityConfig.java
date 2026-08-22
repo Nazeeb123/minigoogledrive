@@ -1,4 +1,3 @@
-
 package com.minidrive.minigoogledrive.config;
 
 import org.springframework.context.annotation.Bean;
@@ -23,89 +22,92 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class SecurityConfig {
 
-        private final JwtFilter jwtFilter;
+    private final JwtFilter jwtFilter;
 
-        public SecurityConfig(JwtFilter jwtFilter) {
-                this.jwtFilter = jwtFilter;
-        }
+    public SecurityConfig(JwtFilter jwtFilter) {
+        this.jwtFilter = jwtFilter;
+    }
 
-        @Bean
-        public SecurityFilterChain securityFilterChain(
-                        HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http) throws Exception {
 
-                http
-                                .csrf(csrf -> csrf.disable())
+        http
+                .csrf(csrf -> csrf.disable())
 
-                                .cors(cors -> {
-                                })
+                .cors(cors -> {
+                })
 
-                                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> auth
 
-                                                .requestMatchers(
-                                                                "/register",
-                                                                "/login")
-                                                .permitAll()
+                        .requestMatchers(
+                                "/register",
+                                "/login")
+                        .permitAll()
 
-                                                .requestMatchers(
-                                                                "/files/**")
-                                                .authenticated()
+                        .requestMatchers(
+                                "/files/**")
+                        .authenticated()
 
-                                                .requestMatchers(
-                                                                "/notifications/**")
-                                                .authenticated()
+                        .requestMatchers(
+                                "/notifications/**")
+                        .authenticated()
 
-                                                .anyRequest()
-                                                .permitAll())
+                        .anyRequest()
+                        .permitAll())
 
-                                .addFilterBefore(
-                                                jwtFilter,
-                                                UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        jwtFilter,
+                        UsernamePasswordAuthenticationFilter.class);
 
-                return http.build();
-        }
+        return http.build();
+    }
 
-        @Bean
-        public PasswordEncoder passwordEncoder() {
-                return new BCryptPasswordEncoder();
-        }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-        @Bean
-        public AuthenticationManager authenticationManager(
-                        AuthenticationConfiguration config) throws Exception {
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config) throws Exception {
 
-                return config.getAuthenticationManager();
-        }
+        return config.getAuthenticationManager();
+    }
 
-        @Bean
-        public CorsConfigurationSource corsConfigurationSource() {
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
 
-                CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration configuration = new CorsConfiguration();
 
-                configuration.setAllowedOrigins(
-                                List.of(
-                                                "http://localhost:5173",
-                                                "https://minigoogledrive.vercel.app",
-                                                "https://minigoogledrive-r6yw.vercel.app"));
+        configuration.setAllowedOrigins(
+                List.of(
+                        "http://localhost:5173",
+                        "https://minigoogledrive.vercel.app",
+                        "https://minigoogledrive-r6yw.vercel.app"
+                ));
 
-                configuration.setAllowedMethods(
-                                List.of(
-                                                "GET",
-                                                "POST",
-                                                "PUT",
-                                                "DELETE",
-                                                "OPTIONS"));
+        configuration.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                ));
 
-                configuration.setAllowedHeaders(
-                                List.of("*"));
+        configuration.setAllowedHeaders(
+                List.of("*"));
 
-                configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(true);
 
-                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
 
-                source.registerCorsConfiguration(
-                                "/**",
-                                configuration);
+        source.registerCorsConfiguration(
+                "/**",
+                configuration);
 
-                return source;
-        }
+        return source;
+    }
 }
