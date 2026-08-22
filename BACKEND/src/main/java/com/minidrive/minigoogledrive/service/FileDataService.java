@@ -729,7 +729,7 @@ public class FileDataService {
 
                 fileDataRepository.save(fileData);
 
-                return "http://localhost:8080/files/shared/" + token;
+                return "https://minigoogledrive-1.onrender.com/files/shared/" + token;
         }
 
         public Resource downloadSharedFile(String token) {

@@ -1,34 +1,15 @@
-import axios from "axios";
-
-
-const API = "http://localhost:8080/folders";
-
-const token = () => localStorage.getItem("token");
+import API from "./api";
 
 export const getFolders = () => {
-    return axios.get(`${API}/my`, {
-        headers: {
-            Authorization: `Bearer ${token()}`
-        }
-    });
+    return API.get("/folders/my");
 };
 
 export const createFolder = (folderName) => {
-    return axios.post(
-        `${API}/create?folderName=${folderName}`,
-        {},
-        {
-            headers: {
-                Authorization: `Bearer ${token()}`
-            }
-        }
+    return API.post(
+        `/folders/create?folderName=${encodeURIComponent(folderName)}`
     );
 };
 
 export const deleteFolder = (id) => {
-    return axios.delete(`${API}/${id}`, {
-        headers: {
-            Authorization: `Bearer ${token()}`
-        }
-    });
+    return API.delete(`/folders/${id}`);
 };
