@@ -35,10 +35,12 @@ public class EmbeddingService {
     public void generateEmbedding(FileData fileData) {
 
         if (fileData == null) {
+            System.out.println("EMBEDDING SKIPPED: fileData is null");
             return;
         }
 
         if (fileData.isDeleted()) {
+            System.out.println("EMBEDDING SKIPPED: file is deleted");
             return;
         }
 
@@ -51,11 +53,27 @@ public class EmbeddingService {
         // EXTRACT TEXT
         // -----------------------------------------
 
-        String content = fileTextService.extractText(fileData);
+        String content;
+
+        try {
+
+            content = fileTextService.extractText(fileData);
+
+        } catch (Exception e) {
+
+            System.out.println("TEXT EXTRACTION FAILED");
+            System.out.println("REASON: " + e.getMessage());
+
+            // IMPORTANT:
+            // File upload should NOT fail because
+            // text extraction failed.
+            return;
+        }
 
         if (content == null || content.trim().isEmpty()) {
 
             System.out.println("NO TEXT EXTRACTED");
+            System.out.println("SKIPPING EMBEDDING");
 
             return;
         }
@@ -67,7 +85,18 @@ public class EmbeddingService {
         // DELETE OLD CHUNKS
         // -----------------------------------------
 
-        documentChunkRepository.deleteByFile(fileData);
+        try {
+
+            documentChunkRepository.deleteByFile(fileData);
+
+        } catch (Exception e) {
+
+            System.out.println("OLD CHUNKS DELETE FAILED");
+            System.out.println("REASON: " + e.getMessage());
+
+            // Do not break file upload
+            return;
+        }
 
         // -----------------------------------------
         // CREATE CHUNKS
@@ -94,17 +123,33 @@ public class EmbeddingService {
 
                 double[] embedding = ollamaService.createEmbedding(chunkText);
 
+                // -----------------------------------------
+                // CHECK EMBEDDING
+                // -----------------------------------------
+
                 if (embedding == null || embedding.length == 0) {
 
                     System.out.println(
-                            "EMBEDDING FAILED - SKIPPING CHUNK: "
+                            "EMBEDDING FAILED - EMPTY RESULT");
+
+                    System.out.println(
+                            "SKIPPING CHUNK: "
                                     + chunkIndex);
 
                     chunkIndex++;
+
                     continue;
                 }
 
+                // -----------------------------------------
+                // CONVERT EMBEDDING TO JSON
+                // -----------------------------------------
+
                 String embeddingJson = objectMapper.writeValueAsString(embedding);
+
+                // -----------------------------------------
+                // CREATE DOCUMENT CHUNK
+                // -----------------------------------------
 
                 DocumentChunk chunk = new DocumentChunk();
 
@@ -112,6 +157,10 @@ public class EmbeddingService {
                 chunk.setContent(chunkText);
                 chunk.setEmbedding(embeddingJson);
                 chunk.setChunkIndex(chunkIndex);
+
+                // -----------------------------------------
+                // SAVE CHUNK
+                // -----------------------------------------
 
                 documentChunkRepository.save(chunk);
 
@@ -125,6 +174,13 @@ public class EmbeddingService {
 
             } catch (Exception e) {
 
+                // =========================================
+                // IMPORTANT FIX
+                // =========================================
+
+                System.out.println(
+                        "=================================");
+
                 System.out.println(
                         "EMBEDDING FAILED FOR CHUNK "
                                 + chunkIndex);
@@ -134,14 +190,24 @@ public class EmbeddingService {
                                 + e.getMessage());
 
                 System.out.println(
-                        "Skipping embedding. File upload will continue.");
+                        "Skipping embedding.");
+
+                System.out.println(
+                        "FILE UPLOAD WILL CONTINUE.");
+
+                System.out.println(
+                        "=================================");
 
                 chunkIndex++;
             }
         }
 
+        // -----------------------------------------
+        // COMPLETED
+        // -----------------------------------------
+
         System.out.println("=================================");
-        System.out.println("RAG EMBEDDING COMPLETED");
+        System.out.println("RAG EMBEDDING PROCESS FINISHED");
         System.out.println("FILE: " + fileData.getFileName());
         System.out.println("CHUNKS: " + chunks.size());
         System.out.println("=================================");
@@ -154,6 +220,10 @@ public class EmbeddingService {
     private List<String> createChunks(String text) {
 
         List<String> chunks = new ArrayList<>();
+
+        if (text == null || text.trim().isEmpty()) {
+            return chunks;
+        }
 
         text = text.trim();
 
