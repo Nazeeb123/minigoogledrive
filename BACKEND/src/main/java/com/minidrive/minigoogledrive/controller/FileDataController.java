@@ -21,8 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -352,7 +350,8 @@ public class FileDataController {
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-                boolean isOwner = fileData.getUser().getId().equals(user.getId());
+                boolean isOwner = fileData.getUser() != null &&
+                                fileData.getUser().getId().equals(user.getId());
 
                 boolean isShared = fileData.getSharedUsers() != null &&
                                 fileData.getSharedUsers().contains(user);
@@ -361,10 +360,44 @@ public class FileDataController {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                 }
 
-                Path path = Paths.get(fileData.getFilePath()).normalize();
+                // ==========================================
+                // FIX OLD WINDOWS PATHS
+                // ==========================================
+
+                String storedPath = fileData.getFilePath();
+
+                if (storedPath == null || storedPath.isBlank()) {
+                        throw new RuntimeException("File path is empty");
+                }
+
+                // Convert Windows "\" to Linux "/"
+                storedPath = storedPath.replace("\\", "/");
+
+                Path path = Paths.get(storedPath);
+
+                // ==========================================
+                // HANDLE RELATIVE uploads/ PATH
+                // ==========================================
+
+                if (!path.isAbsolute()) {
+                        path = Paths.get(System.getProperty("user.dir"))
+                                        .resolve(path);
+                }
+
+                path = path.normalize();
+
+                System.out.println("=================================");
+                System.out.println("VIEW FILE");
+                System.out.println("FILE ID: " + id);
+                System.out.println("FILE NAME: " + fileData.getFileName());
+                System.out.println("DATABASE PATH: " + fileData.getFilePath());
+                System.out.println("NORMALIZED PATH: " + path);
+                System.out.println("EXISTS: " + Files.exists(path));
+                System.out.println("=================================");
 
                 if (!Files.exists(path)) {
-                        throw new RuntimeException("Physical file not found: " + path);
+                        throw new RuntimeException(
+                                        "Physical file not found: " + path);
                 }
 
                 Resource resource = new FileSystemResource(path);
