@@ -52,23 +52,46 @@ public class FileDataController {
 
         // Upload file
         @PostMapping("/upload")
-        public ResponseEntity<FileData> uploadFile(
+        public ResponseEntity<?> uploadFile(
                         @RequestParam("file") MultipartFile file,
                         @RequestParam(value = "folderId", required = false) Long folderId,
                         @RequestParam(value = "fileName", required = false) String fileName) {
 
-                String email = SecurityContextHolder
-                                .getContext()
-                                .getAuthentication()
-                                .getName();
+                try {
 
-                FileData fileData = fileDataService.uploadFile(
-                                file,
-                                email,
-                                folderId,
-                                fileName);
+                        System.out.println("========== UPLOAD REQUEST ==========");
+                        System.out.println("FILE: " + file.getOriginalFilename());
+                        System.out.println("SIZE: " + file.getSize());
+                        System.out.println("TYPE: " + file.getContentType());
+                        System.out.println("FOLDER ID: " + folderId);
+                        System.out.println("FILE NAME: " + fileName);
+                        System.out.println("====================================");
 
-                return ResponseEntity.ok(fileData);
+                        String email = SecurityContextHolder
+                                        .getContext()
+                                        .getAuthentication()
+                                        .getName();
+
+                        FileData fileData = fileDataService.uploadFile(
+                                        file,
+                                        email,
+                                        folderId,
+                                        fileName);
+
+                        return ResponseEntity.ok(fileData);
+
+                } catch (Exception e) {
+
+                        e.printStackTrace();
+
+                        return ResponseEntity
+                                        .badRequest()
+                                        .body(Map.of(
+                                                        "message",
+                                                        e.getMessage() != null
+                                                                        ? e.getMessage()
+                                                                        : "Upload failed"));
+                }
         }
 
         // Get all files
