@@ -80,7 +80,7 @@ public class FileDataService {
         @Autowired
         private EmailService emailService;
 
-        private final String uploadDir = "uploads/";
+        private final String uploadDir = System.getenv().getOrDefault("UPLOAD_DIR", "/app/uploads/");
 
         private User getLoggedInUser() {
 
@@ -1813,6 +1813,62 @@ public class FileDataService {
                 }
 
                 writer.dispose();
+        }
+
+        private Path resolveFilePath(String storedPath) {
+
+                if (storedPath == null || storedPath.isBlank()) {
+                        throw new RuntimeException("File path is empty");
+                }
+
+                storedPath = storedPath.replace("\\", "/");
+
+                Path path = Paths.get(storedPath);
+
+                if (!path.isAbsolute()) {
+                        path = Paths.get(uploadDir)
+                                        .resolve(path.getFileName());
+                }
+
+                return path.normalize();
+        }
+
+        public Resource viewFile(Long id, String email) {
+
+                FileData fileData = fileDataRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("File not found"));
+
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
+
+                boolean isOwner = fileData.getUser() != null &&
+                                fileData.getUser().getId().equals(user.getId());
+
+                boolean isShared = fileData.getSharedUsers() != null &&
+                                fileData.getSharedUsers().contains(user);
+
+                if (!isOwner && !isShared) {
+                        throw new RuntimeException("You are not allowed to view this file");
+                }
+
+                Path path = resolveFilePath(fileData.getFilePath());
+
+                System.out.println("=================================");
+                System.out.println("VIEW FILE");
+                System.out.println("FILE ID: " + id);
+                System.out.println("FILE NAME: " + fileData.getFileName());
+                System.out.println("DATABASE PATH: " + fileData.getFilePath());
+                System.out.println("UPLOAD DIR: " + uploadDir);
+                System.out.println("RESOLVED PATH: " + path);
+                System.out.println("EXISTS: " + Files.exists(path));
+                System.out.println("=================================");
+
+                if (!Files.exists(path)) {
+                        throw new RuntimeException(
+                                        "Physical file not found: " + path);
+                }
+
+                return new FileSystemResource(path);
         }
 
 }

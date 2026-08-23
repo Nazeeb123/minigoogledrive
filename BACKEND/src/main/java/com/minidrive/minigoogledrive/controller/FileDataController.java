@@ -340,81 +340,29 @@ public class FileDataController {
         @GetMapping("/view/{id}")
         public ResponseEntity<Resource> viewFile(
                         @PathVariable Long id,
-                        Authentication authentication) throws IOException {
-
-                FileData fileData = fileDataRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("File not found"));
+                        Authentication authentication) {
 
                 String email = authentication.getName();
 
-                User user = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new RuntimeException("User not found"));
+                Resource resource = fileDataService.viewFile(id, email);
 
-                boolean isOwner = fileData.getUser() != null &&
-                                fileData.getUser().getId().equals(user.getId());
+                try {
+                        Path path = resource.getFile()
+                                        .toPath();
 
-                boolean isShared = fileData.getSharedUsers() != null &&
-                                fileData.getSharedUsers().contains(user);
-
-                if (!isOwner && !isShared) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-                }
-
-                // ==========================================
-                // FIX OLD WINDOWS PATHS
-                // ==========================================
-
-                String storedPath = fileData.getFilePath();
-
-                if (storedPath == null || storedPath.isBlank()) {
-                        throw new RuntimeException("File path is empty");
-                }
-
-                // Convert Windows "\" to Linux "/"
-                storedPath = storedPath.replace("\\", "/");
-
-                Path path = Paths.get(storedPath);
-
-                // ==========================================
-                // HANDLE RELATIVE uploads/ PATH
-                // ==========================================
-
-                if (!path.isAbsolute()) {
-                        path = Paths.get(System.getProperty("user.dir"))
-                                        .resolve(path);
-                }
-
-                path = path.normalize();
-
-                System.out.println("=================================");
-                System.out.println("VIEW FILE");
-                System.out.println("FILE ID: " + id);
-                System.out.println("FILE NAME: " + fileData.getFileName());
-                System.out.println("DATABASE PATH: " + fileData.getFilePath());
-                System.out.println("NORMALIZED PATH: " + path);
-                System.out.println("EXISTS: " + Files.exists(path));
-                System.out.println("=================================");
-
-                if (!Files.exists(path)) {
-                        throw new RuntimeException(
-                                        "Physical file not found: " + path);
-                }
-
-                Resource resource = new FileSystemResource(path);
-
-                String contentType = fileData.getFileType();
-
-                if (contentType == null || contentType.isBlank()) {
-                        contentType = Files.probeContentType(path);
+                        String contentType = Files.probeContentType(path);
 
                         if (contentType == null) {
                                 contentType = "application/octet-stream";
                         }
-                }
 
-                return ResponseEntity.ok()
-                                .contentType(MediaType.parseMediaType(contentType))
-                                .body(resource);
+                        return ResponseEntity.ok()
+                                        .contentType(MediaType.parseMediaType(contentType))
+                                        .body(resource);
+
+                } catch (IOException e) {
+                        throw new RuntimeException("Could not determine file type", e);
+                }
         }
 
         @GetMapping("/shared/count")
