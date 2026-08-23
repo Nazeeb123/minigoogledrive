@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import axios from "axios";
+import API from "../services/api";
 import { FaSearch, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "./NavBar.css";
@@ -44,14 +44,7 @@ function Navbar({
 
     try {
 
-      const response = await axios.get(
-        "http://localhost:8080/notifications",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const response = await API.get("/notifications");
 
       setNotifications(response.data);
 
@@ -75,14 +68,7 @@ function Navbar({
 
     try {
 
-      await axios.delete(
-        `http://localhost:8080/notifications/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      await API.delete(`/notifications/${id}`);
 
       const deletedNotification =
         notifications.find(
@@ -128,15 +114,7 @@ function Navbar({
 
     try {
 
-      const response = await axios.get(
-        "http://localhost:8080/notifications/unread-count",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-
+      const response = await API.get("/notifications/unread-count");
       setUnreadCount(response.data);
 
     } catch (error) {
@@ -159,23 +137,15 @@ function Navbar({
 
     try {
 
-      await axios.put(
-        `http://localhost:8080/notifications/${id}/read`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      await API.put(`/notifications/${id}/read`);
 
       setNotifications(prev =>
         prev.map(notification =>
           notification.id === id
             ? {
-                ...notification,
-                read: true
-              }
+              ...notification,
+              read: true
+            }
             : notification
         )
       );
@@ -369,11 +339,10 @@ function Navbar({
 
                     <div
                       key={notification.id}
-                      className={`notification-item ${
-                        notification.read
-                          ? "read"
-                          : "unread"
-                      }`}
+                      className={`notification-item ${notification.read
+                        ? "read"
+                        : "unread"
+                        }`}
                     >
 
                       {/* NOTIFICATION CONTENT */}
