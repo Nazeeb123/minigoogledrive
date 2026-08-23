@@ -743,7 +743,7 @@ public class OpenRouterService {
 
                 headers.set(
                                 "HTTP-Referer",
-                                "http://localhost:5173");
+                                "https://minigoogledrive-r6yw.vercel.app");
 
                 headers.set(
                                 "X-Title",
