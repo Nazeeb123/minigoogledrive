@@ -94,6 +94,16 @@ public class EmbeddingService {
 
                 double[] embedding = ollamaService.createEmbedding(chunkText);
 
+                if (embedding == null || embedding.length == 0) {
+
+                    System.out.println(
+                            "EMBEDDING FAILED - SKIPPING CHUNK: "
+                                    + chunkIndex);
+
+                    chunkIndex++;
+                    continue;
+                }
+
                 String embeddingJson = objectMapper.writeValueAsString(embedding);
 
                 DocumentChunk chunk = new DocumentChunk();
@@ -113,12 +123,20 @@ public class EmbeddingService {
 
                 chunkIndex++;
 
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
 
-                throw new RuntimeException(
-                        "Could not save embedding for chunk "
-                                + chunkIndex,
-                        e);
+                System.out.println(
+                        "EMBEDDING FAILED FOR CHUNK "
+                                + chunkIndex);
+
+                System.out.println(
+                        "REASON: "
+                                + e.getMessage());
+
+                System.out.println(
+                        "Skipping embedding. File upload will continue.");
+
+                chunkIndex++;
             }
         }
 
