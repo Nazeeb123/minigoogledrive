@@ -16,479 +16,429 @@ import java.util.List;
 @Service
 public class RagService {
 
-    private final DocumentChunkRepository chunkRepository;
-    private final OllamaService ollamaService;
-    private final FileTextService fileTextService;
-    private final ObjectMapper objectMapper;
-    private final OpenRouterService openRouterService;
+        private final DocumentChunkRepository chunkRepository;
+        private final EmbeddingService embeddingService;
+        private final FileTextService fileTextService;
+        private final ObjectMapper objectMapper;
+        private final OpenRouterService openRouterService;
 
-    public RagService(
-            DocumentChunkRepository chunkRepository,
-            OllamaService ollamaService,
-            FileTextService fileTextService,
-            ObjectMapper objectMapper,
-            OpenRouterService openRouterService) {
+        public RagService(
+                        DocumentChunkRepository chunkRepository,
+                        EmbeddingService embeddingService,
+                        FileTextService fileTextService,
+                        ObjectMapper objectMapper,
+                        OpenRouterService openRouterService) {
 
-        this.chunkRepository = chunkRepository;
-        this.ollamaService = ollamaService;
-        this.fileTextService = fileTextService;
-        this.objectMapper = objectMapper;
-        this.openRouterService = openRouterService;
-    }
-
-    // =========================================================
-    // CREATE CHUNKS + EMBEDDINGS
-    // =========================================================
-
-    @Transactional
-    public void createChunks(FileData fileData) {
-
-        if (fileData == null) {
-            return;
+                this.chunkRepository = chunkRepository;
+                this.embeddingService = embeddingService;
+                this.fileTextService = fileTextService;
+                this.objectMapper = objectMapper;
+                this.openRouterService = openRouterService;
         }
 
-        System.out.println(
-                "RAG: Creating chunks for "
-                        + fileData.getFileName());
-
-        String content = fileTextService.extractText(fileData);
-
-        if (content == null ||
-                content.trim().isEmpty()) {
-
-            System.out.println(
-                    "RAG: No readable text found");
-
-            return;
-        }
-
-        // -----------------------------------------------------
-        // NORMALIZE
-        // -----------------------------------------------------
-
-        content = content
-                .replace("\r\n", "\n")
-                .replace("\r", "\n")
-                .trim();
-
-        // -----------------------------------------------------
-        // DELETE OLD CHUNKS
-        // -----------------------------------------------------
-
-        chunkRepository.deleteByFile(fileData);
-
-        // -----------------------------------------------------
-        // SPLIT
-        // -----------------------------------------------------
-
-        List<String> chunks = splitText(content);
-
-        System.out.println(
-                "RAG: "
-                        + chunks.size()
-                        + " chunks created");
-
-        // -----------------------------------------------------
-        // CREATE EMBEDDINGS
-        // -----------------------------------------------------
-
-        int index = 0;
-
-        for (String chunkText : chunks) {
-
-            if (chunkText == null ||
-                    chunkText.trim().isEmpty()) {
-
-                continue;
-            }
-
-            try {
-
-                double[] embedding = ollamaService.createEmbedding(
-                        chunkText);
-
-                String embeddingJson = objectMapper.writeValueAsString(
-                        embedding);
-
-                DocumentChunk chunk = new DocumentChunk();
-
-                chunk.setFile(fileData);
-                chunk.setContent(chunkText);
-                chunk.setEmbedding(embeddingJson);
-                chunk.setChunkIndex(index);
-
-                chunkRepository.save(chunk);
-
-                System.out.println(
-                        "RAG CHUNK "
-                                + index
-                                + " CREATED");
-
-                index++;
-
-            } catch (Exception e) {
-
-                throw new RuntimeException(
-                        "Could not create embedding for chunk "
-                                + index,
-                        e);
-            }
-        }
-
-        System.out.println(
-                "RAG: Chunk generation completed");
-    }
-
-    // =========================================================
-    // ASK QUESTION
-    // =========================================================
-
-    public String askAboutFile(
-            FileData fileData,
-            String question) {
-
-        long startTime = System.currentTimeMillis();
-
-        if (fileData == null) {
-
-            return "File not found.";
-        }
-
-        if (question == null ||
-                question.trim().isEmpty()) {
-
-            return "Please enter a question.";
-        }
-
-        System.out.println(
-                "=================================");
-
-        System.out.println(
-                "RAG QUESTION: "
-                        + question);
-
-        System.out.println(
-                "RAG FILE: "
-                        + fileData.getFileName());
-
-        System.out.println(
-                "=================================");
-
-        // =====================================================
-        // LOAD EXISTING CHUNKS
-        // =====================================================
-
-        List<DocumentChunk> chunks = chunkRepository.findByFile(fileData);
-
-        // =====================================================
-        // CREATE CHUNKS ONLY IF NECESSARY
-        // =====================================================
-
-        if (chunks.isEmpty()) {
-
-            System.out.println(
-                    "RAG: No chunks found.");
-
-            System.out.println(
-                    "RAG: Creating chunks for first question...");
-
-            createChunks(fileData);
-
-            chunks = chunkRepository.findByFile(fileData);
-        }
-
-        if (chunks.isEmpty()) {
-
-            return "I could not find readable information in this file.";
-        }
-
-        System.out.println(
-                "RAG: Loaded "
-                        + chunks.size()
-                        + " existing chunks.");
-
-        // =====================================================
-        // EMBED QUESTION
-        // =====================================================
-
-        long embeddingStart = System.currentTimeMillis();
-
-        double[] questionEmbedding = ollamaService.createEmbedding(
-                question);
-
-        long embeddingTime = System.currentTimeMillis()
-                - embeddingStart;
-
-        System.out.println(
-                "QUESTION EMBEDDING TIME: "
-                        + embeddingTime
-                        + " ms");
-
-        // =====================================================
-        // CALCULATE SIMILARITY
-        // =====================================================
-
-        List<ScoredChunk> scoredChunks = new ArrayList<>();
-
-        for (DocumentChunk chunk : chunks) {
-
-            if (chunk.getEmbedding() == null ||
-                    chunk.getEmbedding().isBlank()) {
-
-                continue;
-            }
-
-            try {
-
-                List<Double> values = objectMapper.readValue(
-                        chunk.getEmbedding(),
-                        new TypeReference<List<Double>>() {
-                        });
-
-                double[] chunkEmbedding = new double[values.size()];
-
-                for (int i = 0; i < values.size(); i++) {
-
-                    chunkEmbedding[i] = values.get(i);
+        // =========================================================
+        // CREATE CHUNKS + EMBEDDINGS
+        // =========================================================
+
+        @Transactional
+        public void createChunks(FileData fileData) {
+
+                if (fileData == null) {
+                        return;
                 }
 
-                double score = cosineSimilarity(
-                        questionEmbedding,
-                        chunkEmbedding);
+                System.out.println(
+                                "RAG: Creating chunks for "
+                                                + fileData.getFileName());
 
-                scoredChunks.add(
-                        new ScoredChunk(
-                                chunk,
-                                score));
+                String content = fileTextService.extractText(fileData);
 
-            } catch (Exception e) {
+                if (content == null ||
+                                content.trim().isEmpty()) {
+
+                        System.out.println(
+                                        "RAG: No readable text found");
+
+                        return;
+                }
+
+                content = content
+                                .replace("\r\n", "\n")
+                                .replace("\r", "\n")
+                                .trim();
+
+                // Delete previous embeddings/chunks
+                chunkRepository.deleteByFile(fileData);
+
+                List<String> chunks = splitText(content);
 
                 System.out.println(
-                        "RAG: Could not read embedding for chunk "
-                                + chunk.getChunkIndex());
-            }
+                                "RAG: "
+                                                + chunks.size()
+                                                + " chunks created");
+
+                int index = 0;
+
+                for (String chunkText : chunks) {
+
+                        if (chunkText == null ||
+                                        chunkText.trim().isEmpty()) {
+
+                                continue;
+                        }
+
+                        try {
+
+                                double[] embedding = embeddingService.createEmbedding(
+                                                chunkText);
+
+                                String embeddingJson = objectMapper.writeValueAsString(
+                                                embedding);
+
+                                DocumentChunk chunk = new DocumentChunk();
+
+                                chunk.setFile(fileData);
+                                chunk.setContent(chunkText);
+                                chunk.setEmbedding(embeddingJson);
+                                chunk.setChunkIndex(index);
+
+                                chunkRepository.save(chunk);
+
+                                System.out.println(
+                                                "RAG CHUNK "
+                                                                + index
+                                                                + " CREATED");
+
+                                index++;
+
+                        } catch (Exception e) {
+
+                                throw new RuntimeException(
+                                                "Could not create embedding for chunk "
+                                                                + index,
+                                                e);
+                        }
+                }
+
+                System.out.println(
+                                "RAG: Chunk generation completed");
         }
 
-        // =====================================================
-        // NO VALID EMBEDDINGS
-        // =====================================================
+        // =========================================================
+        // ASK QUESTION
+        // =========================================================
 
-        if (scoredChunks.isEmpty()) {
+        public String askAboutFile(
+                        FileData fileData,
+                        String question) {
 
-            return "I could not find enough relevant information in this file.";
+                long startTime = System.currentTimeMillis();
+
+                if (fileData == null) {
+                        return "File not found.";
+                }
+
+                if (question == null ||
+                                question.trim().isEmpty()) {
+
+                        return "Please enter a question.";
+                }
+
+                System.out.println(
+                                "=================================");
+
+                System.out.println(
+                                "RAG QUESTION: "
+                                                + question);
+
+                System.out.println(
+                                "RAG FILE: "
+                                                + fileData.getFileName());
+
+                System.out.println(
+                                "=================================");
+
+                List<DocumentChunk> chunks = chunkRepository.findByFile(fileData);
+
+                // -----------------------------------------------------
+                // CREATE CHUNKS IF NECESSARY
+                // -----------------------------------------------------
+
+                if (chunks.isEmpty()) {
+
+                        System.out.println(
+                                        "RAG: No chunks found.");
+
+                        System.out.println(
+                                        "RAG: Creating chunks for first question...");
+
+                        createChunks(fileData);
+
+                        chunks = chunkRepository.findByFile(fileData);
+                }
+
+                if (chunks.isEmpty()) {
+
+                        return "I could not find readable information in this file.";
+                }
+
+                System.out.println(
+                                "RAG: Loaded "
+                                                + chunks.size()
+                                                + " existing chunks.");
+
+                // -----------------------------------------------------
+                // QUESTION EMBEDDING
+                // -----------------------------------------------------
+
+                long embeddingStart = System.currentTimeMillis();
+
+                double[] questionEmbedding = embeddingService.createEmbedding(
+                                question);
+
+                long embeddingTime = System.currentTimeMillis()
+                                - embeddingStart;
+
+                System.out.println(
+                                "QUESTION EMBEDDING TIME: "
+                                                + embeddingTime
+                                                + " ms");
+
+                // -----------------------------------------------------
+                // SIMILARITY
+                // -----------------------------------------------------
+
+                List<ScoredChunk> scoredChunks = new ArrayList<>();
+
+                for (DocumentChunk chunk : chunks) {
+
+                        if (chunk.getEmbedding() == null ||
+                                        chunk.getEmbedding().isBlank()) {
+
+                                continue;
+                        }
+
+                        try {
+
+                                List<Double> values = objectMapper.readValue(
+                                                chunk.getEmbedding(),
+                                                new TypeReference<List<Double>>() {
+                                                });
+
+                                double[] chunkEmbedding = new double[values.size()];
+
+                                for (int i = 0; i < values.size(); i++) {
+
+                                        chunkEmbedding[i] = values.get(i);
+                                }
+
+                                double score = cosineSimilarity(
+                                                questionEmbedding,
+                                                chunkEmbedding);
+
+                                scoredChunks.add(
+                                                new ScoredChunk(
+                                                                chunk,
+                                                                score));
+
+                        } catch (Exception e) {
+
+                                System.out.println(
+                                                "RAG: Could not read embedding for chunk "
+                                                                + chunk.getChunkIndex());
+                        }
+                }
+
+                if (scoredChunks.isEmpty()) {
+
+                        return "I could not find enough relevant information in this file.";
+                }
+
+                // -----------------------------------------------------
+                // SORT
+                // -----------------------------------------------------
+
+                scoredChunks.sort(
+                                Comparator.comparingDouble(
+                                                ScoredChunk::score).reversed());
+
+                // -----------------------------------------------------
+                // TOP CHUNKS
+                // -----------------------------------------------------
+
+                int limit = Math.min(
+                                3,
+                                scoredChunks.size());
+
+                StringBuilder context = new StringBuilder();
+
+                for (int i = 0; i < limit; i++) {
+
+                        DocumentChunk chunk = scoredChunks
+                                        .get(i)
+                                        .chunk();
+
+                        double score = scoredChunks
+                                        .get(i)
+                                        .score();
+
+                        System.out.println(
+                                        "SELECTED CHUNK: "
+                                                        + chunk.getChunkIndex()
+                                                        + " | SCORE: "
+                                                        + score);
+
+                        context.append(
+                                        "\n--- RELEVANT SECTION ---\n");
+
+                        context.append(
+                                        chunk.getContent());
+
+                        context.append("\n");
+                }
+
+                // -----------------------------------------------------
+                // CONTEXT LIMIT
+                // -----------------------------------------------------
+
+                String finalContext = context.toString();
+
+                int maxContextLength = 7000;
+
+                if (finalContext.length() > maxContextLength) {
+
+                        finalContext = finalContext.substring(
+                                        0,
+                                        maxContextLength);
+                }
+
+                System.out.println(
+                                "RAG CONTEXT LENGTH: "
+                                                + finalContext.length());
+
+                // -----------------------------------------------------
+                // OPENROUTER
+                // -----------------------------------------------------
+
+                long aiStart = System.currentTimeMillis();
+
+                String answer = openRouterService.askAboutFile(
+                                question,
+                                fileData.getFileName(),
+                                finalContext);
+
+                long aiTime = System.currentTimeMillis()
+                                - aiStart;
+
+                long totalTime = System.currentTimeMillis()
+                                - startTime;
+
+                System.out.println(
+                                "OPENROUTER RESPONSE TIME: "
+                                                + aiTime
+                                                + " ms");
+
+                System.out.println(
+                                "TOTAL RAG RESPONSE TIME: "
+                                                + totalTime
+                                                + " ms");
+
+                return answer;
         }
 
-        // =====================================================
-        // SORT
-        // =====================================================
+        // =========================================================
+        // TEXT CHUNKING
+        // =========================================================
 
-        scoredChunks.sort(
-                Comparator.comparingDouble(
-                        ScoredChunk::score)
-                        .reversed());
+        private List<String> splitText(
+                        String text) {
 
-        // =====================================================
-        // SELECT TOP CHUNKS
-        // =====================================================
+                List<String> chunks = new ArrayList<>();
 
-        /*
-         * Previously we sent 3 chunks.
-         *
-         * Keep the context small so OpenRouter can answer faster.
-         */
+                int chunkSize = 1000;
+                int overlap = 100;
 
-        int limit = Math.min(
-                2,
-                scoredChunks.size());
+                int start = 0;
 
-        StringBuilder context = new StringBuilder();
+                while (start < text.length()) {
 
-        for (int i = 0; i < limit; i++) {
+                        int end = Math.min(
+                                        start + chunkSize,
+                                        text.length());
 
-            DocumentChunk chunk = scoredChunks
-                    .get(i)
-                    .chunk();
+                        String chunk = text.substring(
+                                        start,
+                                        end).trim();
 
-            double score = scoredChunks
-                    .get(i)
-                    .score();
+                        if (!chunk.isEmpty()) {
 
-            System.out.println(
-                    "SELECTED CHUNK: "
-                            + chunk.getChunkIndex()
-                            + " | SCORE: "
-                            + score);
+                                chunks.add(chunk);
+                        }
 
-            context.append(
-                    "\n--- RELEVANT SECTION ---\n");
+                        if (end >= text.length()) {
+                                break;
+                        }
 
-            context.append(
-                    chunk.getContent());
+                        start = end - overlap;
+                }
 
-            context.append("\n");
+                return chunks;
         }
 
-        // =====================================================
-        // LIMIT CONTEXT SIZE
-        // =====================================================
+        // =========================================================
+        // COSINE SIMILARITY
+        // =========================================================
 
-        String finalContext = context.toString();
+        private double cosineSimilarity(
+                        double[] a,
+                        double[] b) {
 
-        /*
-         * Prevent unnecessarily large prompts.
-         */
+                if (a == null ||
+                                b == null) {
 
-        int maxContextLength = 7000;
+                        return 0;
+                }
 
-        if (finalContext.length() > maxContextLength) {
+                if (a.length != b.length) {
 
-            finalContext = finalContext.substring(
-                    0,
-                    maxContextLength);
+                        throw new RuntimeException(
+                                        "Embedding dimensions do not match: "
+                                                        + a.length
+                                                        + " vs "
+                                                        + b.length);
+                }
+
+                double dot = 0;
+                double magnitudeA = 0;
+                double magnitudeB = 0;
+
+                for (int i = 0; i < a.length; i++) {
+
+                        dot += a[i] * b[i];
+
+                        magnitudeA += a[i] * a[i];
+
+                        magnitudeB += b[i] * b[i];
+                }
+
+                if (magnitudeA == 0 ||
+                                magnitudeB == 0) {
+
+                        return 0;
+                }
+
+                return dot /
+                                (Math.sqrt(magnitudeA)
+                                                *
+                                                Math.sqrt(magnitudeB));
         }
 
-        System.out.println(
-                "RAG CONTEXT LENGTH: "
-                        + finalContext.length());
+        // =========================================================
+        // INTERNAL CLASS
+        // =========================================================
 
-        // =====================================================
-        // SEND TO OPENROUTER
-        // =====================================================
-
-        long aiStart = System.currentTimeMillis();
-
-        String answer = openRouterService.askAboutFile(
-                question,
-                fileData.getFileName(),
-                finalContext);
-
-        long aiTime = System.currentTimeMillis()
-                - aiStart;
-
-        long totalTime = System.currentTimeMillis()
-                - startTime;
-
-        System.out.println(
-                "OPENROUTER RESPONSE TIME: "
-                        + aiTime
-                        + " ms");
-
-        System.out.println(
-                "TOTAL RAG RESPONSE TIME: "
-                        + totalTime
-                        + " ms");
-
-        return answer;
-    }
-
-    // =========================================================
-    // TEXT CHUNKING
-    // =========================================================
-
-    private List<String> splitText(
-            String text) {
-
-        List<String> chunks = new ArrayList<>();
-
-        /*
-         * Smaller chunks = smaller embeddings
-         * and more focused retrieval.
-         */
-
-        int chunkSize = 1000;
-
-        /*
-         * Small overlap preserves context
-         * between neighboring chunks.
-         */
-
-        int overlap = 100;
-
-        int start = 0;
-
-        while (start < text.length()) {
-
-            int end = Math.min(
-                    start + chunkSize,
-                    text.length());
-
-            String chunk = text.substring(
-                    start,
-                    end)
-                    .trim();
-
-            if (!chunk.isEmpty()) {
-
-                chunks.add(chunk);
-            }
-
-            if (end >= text.length()) {
-
-                break;
-            }
-
-            start = end - overlap;
+        private record ScoredChunk(
+                        DocumentChunk chunk,
+                        double score) {
         }
-
-        return chunks;
-    }
-
-    // =========================================================
-    // COSINE SIMILARITY
-    // =========================================================
-
-    private double cosineSimilarity(
-            double[] a,
-            double[] b) {
-
-        if (a == null ||
-                b == null) {
-
-            return 0;
-        }
-
-        if (a.length != b.length) {
-
-            throw new RuntimeException(
-                    "Embedding dimensions do not match: "
-                            + a.length
-                            + " vs "
-                            + b.length);
-        }
-
-        double dot = 0;
-
-        double magnitudeA = 0;
-
-        double magnitudeB = 0;
-
-        for (int i = 0; i < a.length; i++) {
-
-            dot += a[i] * b[i];
-
-            magnitudeA += a[i] * a[i];
-
-            magnitudeB += b[i] * b[i];
-        }
-
-        if (magnitudeA == 0 ||
-                magnitudeB == 0) {
-
-            return 0;
-        }
-
-        return dot /
-                (Math.sqrt(magnitudeA)
-                        *
-                        Math.sqrt(magnitudeB));
-    }
-
-    // =========================================================
-    // INTERNAL CLASS
-    // =========================================================
-
-    private record ScoredChunk(
-            DocumentChunk chunk,
-            double score) {
-    }
 }
