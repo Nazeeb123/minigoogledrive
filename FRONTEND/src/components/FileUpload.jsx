@@ -20,46 +20,57 @@ function FileUpload({ refreshFiles }) {
         const formData = new FormData();
 
         formData.append("file", file);
-        formData.append("fileName", fileName);
+
+        if (fileName && fileName.trim()) {
+            formData.append("fileName", fileName.trim());
+        }
 
         try {
 
             setUploading(true);
             setUploadProgress(0);
 
-            await API.post(
+            const response = await API.post(
                 "/files/upload",
                 formData,
                 {
-                    headers: {
-                        "Content-Type": "multipart/form-data"
-                    },
-
                     onUploadProgress: (progressEvent) => {
 
-                        const percent = Math.round(
-                            (progressEvent.loaded * 100) /
-                            progressEvent.total
-                        );
+                        if (progressEvent.total) {
 
-                        setUploadProgress(percent);
+                            const percent = Math.round(
+                                (progressEvent.loaded * 100) /
+                                progressEvent.total
+                            );
 
+                            setUploadProgress(percent);
+                        }
                     }
-
                 }
             );
+
+            console.log("UPLOAD SUCCESS:", response.data);
 
             setUploadProgress(100);
 
             alert("File uploaded successfully");
+            setFile(null);
+            setFileName("");
 
             refreshFiles();
 
+
         } catch (error) {
 
-            console.log(error);
+            console.error(
+                "UPLOAD ERROR:",
+                error.response?.data || error
+            );
 
-            alert("Upload failed");
+            alert(
+                error.response?.data?.message ||
+                "Upload failed"
+            );
 
         } finally {
 
@@ -71,7 +82,6 @@ function FileUpload({ refreshFiles }) {
             }, 1000);
 
         }
-
     };
 
 
@@ -98,25 +108,24 @@ function FileUpload({ refreshFiles }) {
                 onChange={(e) => setFileName(e.target.value)}
             />
 
-            <button onClick={uploadFile}>
-                ⬆ Upload
+            <button
+                onClick={uploadFile}
+                disabled={uploading}
+            >
+                {uploading ? "Uploading..." : "⬆ Upload"}
             </button>
             {uploading && (
-                <div className="upload-popup">
+                <div className="upload-progress">
+                    <div className="upload-progress-text">
+                        Uploading... {uploadProgress}%
+                    </div>
 
-                    <h4>Uploading...</h4>
-
-                    <p>{file ? file.name : fileName}</p>
-
-                    <div className="upload-bar">
+                    <div className="progress-track">
                         <div
-                            className="upload-fill"
+                            className="progress-bar"
                             style={{ width: `${uploadProgress}%` }}
                         />
                     </div>
-
-                    <p>{uploadProgress}%</p>
-
                 </div>
             )}
 

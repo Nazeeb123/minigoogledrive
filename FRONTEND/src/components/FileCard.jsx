@@ -210,6 +210,8 @@ function FileCard({
 
         try {
 
+            console.log("OPEN FILE:", id);
+
             // Mark file as viewed
             try {
 
@@ -221,12 +223,12 @@ function FileCard({
 
                 console.log(
                     "Mark viewed failed:",
-                    error
+                    error.response?.data || error.message
                 );
 
             }
 
-            // Open file
+            // Get file from backend
             const response = await API.get(
                 `/files/view/${id}`,
                 {
@@ -234,31 +236,50 @@ function FileCard({
                 }
             );
 
+            console.log(
+                "FILE RESPONSE:",
+                response.status,
+                response.headers["content-type"]
+            );
+
+            // Create blob
             const blob = new Blob(
                 [response.data],
                 {
                     type:
-                        response.headers["content-type"]
-                        || "application/octet-stream"
+                        response.headers["content-type"] ||
+                        "application/octet-stream"
                 }
             );
 
-            const url =
-                window.URL.createObjectURL(blob);
+            // Create temporary URL
+            const url = window.URL.createObjectURL(blob);
 
-            window.open(
-                url,
-                "_blank"
-            );
+            // Open in new tab
+            const newTab = window.open(url, "_blank");
+
+            if (!newTab) {
+                alert("Please allow pop-ups for this website.");
+                window.URL.revokeObjectURL(url);
+                return;
+            }
+
+            // Release object URL after some time
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+            }, 60000);
 
         } catch (error) {
 
-            console.log(
-                "OPEN SEARCH FILE ERROR:",
-                error
+            console.error(
+                "OPEN FILE ERROR:",
+                error.response?.data || error
             );
 
-            alert("Cannot open file");
+            alert(
+                error.response?.data?.message ||
+                "Cannot open file"
+            );
 
         }
 
