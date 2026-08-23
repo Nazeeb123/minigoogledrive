@@ -1,87 +1,88 @@
-
 package com.minidrive.minigoogledrive.service;
 
 import com.minidrive.minigoogledrive.model.Notification;
 import com.minidrive.minigoogledrive.model.User;
 import com.minidrive.minigoogledrive.repository.NotificationRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-
 import java.util.List;
 
 @Service
-
 public class NotificationService {
-        @Autowired
-        private NotificationRepository notificationRepository;
 
-        public NotificationService(
+    private final NotificationRepository notificationRepository;
 
-                        NotificationRepository notificationRepository) {
-                this.notificationRepository = notificationRepository;
+    public NotificationService(NotificationRepository notificationRepository) {
+        this.notificationRepository = notificationRepository;
+    }
+
+    // CREATE NOTIFICATION
+    public Notification createNotification(User user, String message) {
+
+        Notification notification = new Notification();
+
+        notification.setUser(user);
+        notification.setMessage(message);
+        notification.setRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+
+        return notificationRepository.save(notification);
+    }
+
+    // GET CURRENT USER'S NOTIFICATIONS
+    public List<Notification> getUserNotifications(User user) {
+
+        return notificationRepository
+                .findByUserOrderByCreatedAtDesc(user);
+    }
+
+    // UNREAD COUNT
+    public long getUnreadCount(User user) {
+
+        return notificationRepository
+                .countByUserAndReadFalse(user);
+    }
+
+    // MARK AS READ
+    public void markAsRead(Long id, User currentUser) {
+
+        Notification notification = notificationRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Notification not found"));
+
+        // SECURITY CHECK
+        if (notification.getUser() == null ||
+                !notification.getUser().getId().equals(currentUser.getId())) {
+
+            throw new RuntimeException(
+                    "You cannot modify this notification");
         }
 
-        // Create notification
-        public void createNotification(
-                        User user,
-                        String message) {
+        if (!notification.isRead()) {
+            notification.setRead(true);
+            notificationRepository.save(notification);
+        }
+    }
 
-                Notification notification = new Notification();
+    // DELETE
+    public void deleteNotification(Long id, User currentUser) {
 
-                notification.setUser(user);
-                notification.setMessage(message);
-                notification.setRead(false);
-                notification.setCreatedAt(
-                                LocalDateTime.now());
+        Notification notification = notificationRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Notification not found"));
 
-                notificationRepository.save(notification);
+        // SECURITY CHECK
+        if (notification.getUser() == null ||
+                !notification.getUser().getId().equals(currentUser.getId())) {
+
+            throw new RuntimeException(
+                    "You cannot delete this notification");
         }
 
-        // Get all notifications
-        public List<Notification> getUserNotifications(
-                        User user) {
-
-                return notificationRepository
-                                .findByUserOrderByCreatedAtDesc(user);
-        }
-
-        // Get unread count
-        public long getUnreadCount(User user) {
-
-                return notificationRepository
-                                .countByUserAndReadFalse(user);
-        }
-
-        // Mark notification as read
-        public void markAsRead(
-                        Long id,
-                        User currentUser) {
-
-                Notification notification = notificationRepository
-                                .findById(id)
-                                .orElseThrow(() -> new RuntimeException(
-                                                "Notification not found"));
-
-                if (!notification.getUser().getId()
-                                .equals(currentUser.getId())) {
-
-                        throw new RuntimeException(
-                                        "You cannot modify this notification");
-                }
-
-                notification.setRead(true);
-
-                notificationRepository.save(notification);
-        }
-
-        public void deleteNotification(Long id) {
-
-                Notification notification = notificationRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Notification not found"));
-
-                notificationRepository.delete(notification);
-        }
+        notificationRepository.delete(notification);
+    }
 }

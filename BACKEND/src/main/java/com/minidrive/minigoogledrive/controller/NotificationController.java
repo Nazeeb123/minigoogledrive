@@ -8,9 +8,6 @@ import com.minidrive.minigoogledrive.service.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-
 
 import java.util.List;
 
@@ -18,125 +15,85 @@ import java.util.List;
 @RequestMapping("/notifications")
 public class NotificationController {
 
-        private final NotificationService notificationService;
-        private final UserRepository userRepository;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
-        public NotificationController(
-                        NotificationService notificationService,
-                        UserRepository userRepository) {
+    public NotificationController(
+            NotificationService notificationService,
+            UserRepository userRepository) {
 
-                this.notificationService = notificationService;
-                this.userRepository = userRepository;
+        this.notificationService = notificationService;
+        this.userRepository = userRepository;
+    }
+
+    private User getCurrentUser() {
+
+        var authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null ||
+                !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getName())) {
+
+            throw new RuntimeException("User is not authenticated");
         }
 
-        // =========================
-        // GET CURRENT USER
-        // =========================
+        String email = authentication.getName();
 
-        private User getCurrentUser() {
+        return userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "User not found: " + email));
+    }
 
-                var authentication = SecurityContextHolder
-                                .getContext()
-                                .getAuthentication();
+    // GET NOTIFICATIONS
+    @GetMapping
+    public List<Notification> getNotifications() {
 
-                System.out.println("===== NOTIFICATION AUTH =====");
+        User user = getCurrentUser();
 
-                System.out.println(
-                                "Authentication: " + authentication);
+        return notificationService
+                .getUserNotifications(user);
+    }
 
-                if (authentication == null) {
+    // UNREAD COUNT
+    @GetMapping("/unread-count")
+    public long getUnreadCount() {
 
-                        System.out.println(
-                                        "AUTHENTICATION IS NULL");
+        User user = getCurrentUser();
 
-                        throw new RuntimeException(
-                                        "Authentication is null");
-                }
+        return notificationService
+                .getUnreadCount(user);
+    }
 
-                System.out.println(
-                                "Authenticated: "
-                                                + authentication.isAuthenticated());
+    // MARK AS READ
+    @PutMapping("/{id}/read")
+    public ResponseEntity<?> markAsRead(
+            @PathVariable Long id) {
 
-                System.out.println(
-                                "Username: "
-                                                + authentication.getName());
+        User user = getCurrentUser();
 
-                String email = authentication.getName();
+        notificationService.markAsRead(id, user);
 
-                User user = userRepository
-                                .findByEmail(email)
-                                .orElseThrow(() -> new RuntimeException(
-                                                "User not found: "
-                                                                + email));
+        return ResponseEntity.ok(
+                "Notification marked as read");
+    }
 
-                System.out.println(
-                                "USER FOUND: "
-                                                + user.getEmail());
+    // DELETE
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteNotification(
+            @PathVariable Long id) {
 
-                return user;
-        }
+        User user = getCurrentUser();
 
-        // =========================
-        // GET NOTIFICATIONS
-        // =========================
+        notificationService.deleteNotification(
+                id,
+                user);
 
-        @GetMapping
-        public List<Notification> getNotifications() {
-
-                System.out.println(
-                                "GET /notifications");
-
-                User user = getCurrentUser();
-
-                System.out.println(
-                                "Getting notifications for: "
-                                                + user.getEmail());
-
-                return notificationService
-                                .getUserNotifications(user);
-        }
-
-        // =========================
-        // GET UNREAD COUNT
-        // =========================
-
-        @GetMapping("/unread-count")
-        public long getUnreadCount() {
-
-                System.out.println(
-                                "GET /notifications/unread-count");
-
-                User user = getCurrentUser();
-
-                System.out.println(
-                                "Getting unread count for: "
-                                                + user.getEmail());
-
-                return notificationService
-                                .getUnreadCount(user);
-        }
-
-        // =========================
-        // MARK AS READ
-        // =========================
-
-        @PutMapping("/{id}/read")
-        public String markAsRead(
-                        @PathVariable Long id) {
-
-                User user = getCurrentUser();
-
-                notificationService
-                                .markAsRead(id, user);
-
-                return "Notification marked as read";
-        }
-
-        @DeleteMapping("/{id}")
-        public ResponseEntity<?> deleteNotification(@PathVariable Long id) {
-
-                notificationService.deleteNotification(id);
-
-                return ResponseEntity.ok("Notification deleted successfully");
-        }
+        return ResponseEntity.ok(
+                "Notification deleted successfully");
+    }
 }
