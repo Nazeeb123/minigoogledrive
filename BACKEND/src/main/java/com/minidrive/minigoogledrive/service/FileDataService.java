@@ -1924,7 +1924,8 @@ public class FileDataService {
                                 && fileData.getSharedUsers().contains(user);
 
                 if (!isOwner && !isShared) {
-                        throw new RuntimeException("You are not allowed to view this file");
+                        throw new RuntimeException(
+                                        "You are not allowed to view this file");
                 }
 
                 String filePath = fileData.getFilePath();
@@ -1934,31 +1935,38 @@ public class FileDataService {
                 }
 
                 System.out.println("========== VIEW FILE ==========");
-                System.out.println("FILE ID: " + id);
-                System.out.println("FILE NAME: " + fileData.getFileName());
-                System.out.println("FILE TYPE: " + fileData.getFileType());
-                System.out.println("FILE PATH: " + filePath);
-                System.out.println("================================");
+                System.out.println("ID: " + id);
+                System.out.println("NAME: " + fileData.getFileName());
+                System.out.println("PATH: " + filePath);
+                System.out.println("===============================");
 
                 fileData.setLastAccessed(LocalDateTime.now());
                 fileDataRepository.save(fileData);
 
                 try {
 
-                        // Cloudinary URL
-                        if (filePath.startsWith("http://") ||
-                                        filePath.startsWith("https://")) {
+                        // ================================
+                        // CLOUDINARY FILE
+                        // ================================
+                        if (filePath.startsWith("http://")
+                                        || filePath.startsWith("https://")) {
+
+                                System.out.println("OPENING CLOUDINARY URL");
 
                                 return new UrlResource(filePath);
                         }
 
-                        // Old local files
+                        // ================================
+                        // OLD LOCAL FILE
+                        // ================================
                         Path path = Paths.get(filePath);
 
                         if (!Files.exists(path)) {
                                 throw new RuntimeException(
-                                                "File does not exist: " + filePath);
+                                                "Local file does not exist: " + filePath);
                         }
+
+                        System.out.println("OPENING LOCAL FILE");
 
                         return new FileSystemResource(path);
 

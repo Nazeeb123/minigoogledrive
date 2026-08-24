@@ -462,31 +462,17 @@ public class FileDataController {
 
                 if (contentType == null || contentType.isBlank()) {
 
-                        String fileName = fileData.getFileName();
+                        String name = fileData.getFileName().toLowerCase();
 
-                        if (fileName != null) {
-
-                                String lower = fileName.toLowerCase();
-
-                                if (lower.endsWith(".pdf")) {
-                                        contentType = "application/pdf";
-
-                                } else if (lower.endsWith(".png")) {
-                                        contentType = "image/png";
-
-                                } else if (lower.endsWith(".jpg") ||
-                                                lower.endsWith(".jpeg")) {
-                                        contentType = "image/jpeg";
-
-                                } else if (lower.endsWith(".gif")) {
-                                        contentType = "image/gif";
-
-                                } else if (lower.endsWith(".txt")) {
-                                        contentType = "text/plain";
-
-                                } else {
-                                        contentType = "application/octet-stream";
-                                }
+                        if (name.endsWith(".pdf")) {
+                                contentType = "application/pdf";
+                        } else if (name.endsWith(".png")) {
+                                contentType = "image/png";
+                        } else if (name.endsWith(".jpg")
+                                        || name.endsWith(".jpeg")) {
+                                contentType = "image/jpeg";
+                        } else if (name.endsWith(".txt")) {
+                                contentType = "text/plain";
                         } else {
                                 contentType = "application/octet-stream";
                         }
@@ -496,7 +482,9 @@ public class FileDataController {
                                 .contentType(MediaType.parseMediaType(contentType))
                                 .header(
                                                 "Content-Disposition",
-                                                "inline; filename=\"" + fileData.getFileName() + "\"")
+                                                "inline; filename=\"" +
+                                                                fileData.getFileName() +
+                                                                "\"")
                                 .body(resource);
         }
 
