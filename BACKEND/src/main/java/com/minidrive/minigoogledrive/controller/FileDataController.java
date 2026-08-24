@@ -51,15 +51,56 @@ public class FileDataController {
         private SemanticSearchService semanticSearchService;
 
         // Upload file
-        @PostMapping("/upload")
+        @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         public ResponseEntity<?> uploadFile(
                         @RequestParam("file") MultipartFile file,
                         @RequestParam(value = "folderId", required = false) Long folderId,
-                        @RequestParam(value = "fileName", required = false) String fileName) {
+                        @RequestParam(value = "fileName", required = false) String fileName,
+                        Authentication authentication) {
 
                 try {
 
+                        // =========================
+                        // AUTHENTICATION
+                        // =========================
+
+                        if (authentication == null ||
+                                        !authentication.isAuthenticated() ||
+                                        "anonymousUser".equals(authentication.getName())) {
+
+                                return ResponseEntity
+                                                .status(HttpStatus.UNAUTHORIZED)
+                                                .body(Map.of(
+                                                                "message",
+                                                                "User is not authenticated"));
+                        }
+
+                        String email = authentication.getName();
+
+                        // =========================
+                        // FILE VALIDATION
+                        // =========================
+
+                        if (file == null || file.isEmpty()) {
+
+                                return ResponseEntity
+                                                .badRequest()
+                                                .body(Map.of(
+                                                                "message",
+                                                                "Please select a file"));
+                        }
+
+                        if (file.getSize() > 10 * 1024 * 1024) {
+
+                                return ResponseEntity
+                                                .badRequest()
+                                                .body(Map.of(
+                                                                "message",
+                                                                "File size exceeds 10 MB"));
+                        }
+
                         System.out.println("========== UPLOAD REQUEST ==========");
+                        System.out.println("USER: " + email);
                         System.out.println("FILE: " + file.getOriginalFilename());
                         System.out.println("SIZE: " + file.getSize());
                         System.out.println("TYPE: " + file.getContentType());
@@ -67,10 +108,9 @@ public class FileDataController {
                         System.out.println("FILE NAME: " + fileName);
                         System.out.println("====================================");
 
-                        String email = SecurityContextHolder
-                                        .getContext()
-                                        .getAuthentication()
-                                        .getName();
+                        // =========================
+                        // UPLOAD TO SERVICE
+                        // =========================
 
                         FileData fileData = fileDataService.uploadFile(
                                         file,
@@ -78,9 +118,15 @@ public class FileDataController {
                                         folderId,
                                         fileName);
 
-                        return ResponseEntity.ok(fileData);
+                        // =========================
+                        // SUCCESS
+                        // =========================
 
-                } catch (Exception e) {
+                        return ResponseEntity
+                                        .status(HttpStatus.CREATED)
+                                        .body(fileData);
+
+                } catch (RuntimeException e) {
 
                         e.printStackTrace();
 
@@ -91,6 +137,16 @@ public class FileDataController {
                                                         e.getMessage() != null
                                                                         ? e.getMessage()
                                                                         : "Upload failed"));
+
+                } catch (Exception e) {
+
+                        e.printStackTrace();
+
+                        return ResponseEntity
+                                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body(Map.of(
+                                                        "message",
+                                                        "Server error while uploading file"));
                 }
         }
 
@@ -126,7 +182,6 @@ public class FileDataController {
         }
 
         // Get logged-in user's files
-        
 
         @GetMapping("/download/{id}")
         public ResponseEntity<Resource> downloadFile(
@@ -135,9 +190,26 @@ public class FileDataController {
 
                 String email = authentication.getName();
 
+                FileData fileData = fileDataRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("File not found"));
+
                 Resource resource = fileDataService.downloadFile(id, email);
 
-                return ResponseEntity.ok(resource);
+                String contentType = fileData.getFileType();
+
+                if (contentType == null || contentType.isBlank()) {
+                        contentType = "application/octet-stream";
+                }
+
+                return ResponseEntity.ok()
+                                .contentType(
+                                                MediaType.parseMediaType(contentType))
+                                .header(
+                                                "Content-Disposition",
+                                                "attachment; filename=\"" +
+                                                                fileData.getFileName() +
+                                                                "\"")
+                                .body(resource);
         }
 
         // Delete file
@@ -381,26 +453,35 @@ public class FileDataController {
                         @PathVariable Long id,
                         Authentication authentication) {
 
-                String email = authentication.getName();
-
-                Resource resource = fileDataService.viewFile(id, email);
-
                 try {
-                        Path path = resource.getFile()
-                                        .toPath();
+                        String email = authentication.getName();
 
-                        String contentType = Files.probeContentType(path);
+                        FileData fileData = fileDataRepository.findById(id)
+                                        .orElseThrow(() -> new RuntimeException("File not found"));
 
-                        if (contentType == null) {
+                        Resource resource = fileDataService.viewFile(id, email);
+
+                        String contentType = fileData.getFileType();
+
+                        if (contentType == null || contentType.isBlank()) {
                                 contentType = "application/octet-stream";
                         }
 
                         return ResponseEntity.ok()
                                         .contentType(MediaType.parseMediaType(contentType))
+                                        .header(
+                                                        "Content-Disposition",
+                                                        "inline; filename=\"" +
+                                                                        fileData.getFileName() +
+                                                                        "\"")
                                         .body(resource);
 
-                } catch (IOException e) {
-                        throw new RuntimeException("Could not determine file type", e);
+                } catch (Exception e) {
+                        e.printStackTrace();
+
+                        return ResponseEntity
+                                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .build();
                 }
         }
 

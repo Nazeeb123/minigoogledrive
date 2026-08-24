@@ -255,31 +255,34 @@ public class FileDataService {
                         FileData fileData = fileDataRepository.findById(id)
                                         .orElseThrow(() -> new RuntimeException("File not found"));
 
-                        boolean isOwner = fileData.getUser().getId()
-                                        .equals(user.getId());
+                        boolean isOwner = fileData.getUser() != null
+                                        && fileData.getUser().getId().equals(user.getId());
 
                         boolean isShared = fileData.getSharedUsers() != null
                                         && fileData.getSharedUsers().contains(user);
 
                         if (!isOwner && !isShared) {
-                                throw new RuntimeException("You cannot access this file");
+                                throw new RuntimeException(
+                                                "You cannot access this file");
                         }
 
-                        Path path = Paths.get(fileData.getFilePath()).normalize();
+                        if (fileData.getFilePath() == null ||
+                                        fileData.getFilePath().isBlank()) {
 
-                        if (!Files.exists(path)) {
-                                throw new RuntimeException("File does not exist");
+                                throw new RuntimeException(
+                                                "File URL is empty");
                         }
 
-                        // Update recent access time
                         fileData.setLastAccessed(LocalDateTime.now());
                         fileDataRepository.save(fileData);
 
-                        return new UrlResource(path.toUri());
+                        return new UrlResource(fileData.getFilePath());
 
                 } catch (MalformedURLException e) {
 
-                        throw new RuntimeException("Download failed", e);
+                        throw new RuntimeException(
+                                        "Invalid Cloudinary URL",
+                                        e);
                 }
         }
 
@@ -323,70 +326,51 @@ public class FileDataService {
         // Rename file (secured)
         public String renameFile(Long id, String newName) {
 
-                try {
+                String email = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+                                .getName();
 
-                        // Get logged-in user email from JWT
-                        String email = SecurityContextHolder
-                                        .getContext()
-                                        .getAuthentication()
-                                        .getName();
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-                        // Find logged-in user
-                        User user = userRepository.findByEmail(email)
-                                        .orElseThrow(() -> new RuntimeException("User not found"));
+                FileData fileData = fileDataRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("File not found"));
 
-                        // Find file
-                        FileData fileData = fileDataRepository.findById(id)
-                                        .orElseThrow(() -> new RuntimeException("File not found"));
+                if (!fileData.getUser().getId().equals(user.getId())) {
+                        throw new RuntimeException(
+                                        "You cannot rename this file");
+                }
 
-                        // Check ownership
-                        if (!fileData.getUser().getId().equals(user.getId())) {
-
-                                throw new RuntimeException("You cannot rename this file");
-                        }
-
-                        // Old file path
-                        // Old file path
-                        Path oldPath = Paths.get(fileData.getFilePath());
-
-                        // Get original file name
-                        String oldFileName = fileData.getFileName();
-
-                        // Preserve extension
-                        String finalName = newName;
-
-                        int dotIndex = oldFileName.lastIndexOf(".");
-
-                        if (dotIndex != -1) {
-
-                                String extension = oldFileName.substring(dotIndex);
-
-                                finalName = newName + extension;
-                        }
-
-                        // New file path
-                        Path newPath = oldPath.resolveSibling(finalName);
-
-                        // Rename physical file
-                        Files.move(
-                                        oldPath,
-                                        newPath,
-                                        StandardCopyOption.REPLACE_EXISTING);
-
-                        // Update database
-                        fileData.setFileName(finalName);
-                        fileData.setFilePath(newPath.toString());
-
-                        fileDataRepository.save(fileData);
-
-                        return "File renamed successfully";
-
-                } catch (Exception e) {
+                if (newName == null ||
+                                newName.trim().isEmpty()) {
 
                         throw new RuntimeException(
-                                        "Rename failed",
-                                        e);
+                                        "File name cannot be empty");
                 }
+
+                String oldFileName = fileData.getFileName();
+
+                int dotIndex = oldFileName.lastIndexOf(".");
+
+                String finalName;
+
+                if (dotIndex != -1) {
+
+                        String extension = oldFileName.substring(dotIndex);
+
+                        finalName = newName.trim() + extension;
+
+                } else {
+
+                        finalName = newName.trim();
+                }
+
+                fileData.setFileName(finalName);
+
+                fileDataRepository.save(fileData);
+
+                return "File renamed successfully";
         }
 
         // Get all files in a folder
@@ -503,17 +487,9 @@ public class FileDataService {
         // Permanently delete file
         public String permanentDelete(Long id) {
 
-                String email = SecurityContextHolder
-                                .getContext()
-                                .getAuthentication()
-                                .getName();
+                User user = getLoggedInUser();
 
-                User user = userRepository
-                                .findByEmail(email)
-                                .orElseThrow(() -> new RuntimeException("User not found"));
-
-                FileData fileData = fileDataRepository
-                                .findById(id)
+                FileData fileData = fileDataRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("File not found"));
 
                 if (!fileData.getUser().getId().equals(user.getId())) {
@@ -522,44 +498,39 @@ public class FileDataService {
                                         "You cannot permanently delete this file");
                 }
 
-                String filePath = fileData.getFilePath();
+                String publicId = fileData.getCloudinaryPublicId();
 
-                /*
-                 * Delete DB record first.
-                 */
-                fileDataRepository.delete(fileData);
+                String resourceType = fileData.getCloudinaryResourceType();
 
-                /*
-                 * Only delete the physical file when no other
-                 * FileData record references it.
-                 *
-                 * This protects shared/copied records.
-                 */
-                long remainingReferences = fileDataRepository.countByFilePath(filePath);
+                try {
 
-                if (remainingReferences == 0) {
+                        if (publicId != null &&
+                                        !publicId.isBlank()) {
 
-                        File physicalFile = new File(filePath);
-
-                        if (physicalFile.exists()) {
-
-                                boolean deleted = physicalFile.delete();
-
-                                if (!deleted) {
-
-                                        System.out.println(
-                                                        "WARNING: Could not delete physical file: "
-                                                                        + filePath);
-                                }
+                                cloudinaryService.deleteFile(
+                                                publicId,
+                                                resourceType != null
+                                                                ? resourceType
+                                                                : "image");
                         }
+
+                } catch (Exception e) {
+
+                        throw new RuntimeException(
+                                        "Failed to delete file from Cloudinary",
+                                        e);
                 }
+
+                fileDataRepository.delete(fileData);
 
                 return "File permanently deleted";
         }
 
         // Share file with another user
         // Send file directly to an external email address
-        public String sendFileByEmail(Long fileId, String recipientEmail) {
+        public String sendFileByEmail(
+                        Long fileId,
+                        String recipientEmail) {
 
                 // Get logged-in user
                 User sender = getLoggedInUser();
@@ -570,12 +541,14 @@ public class FileDataService {
 
                 // Only owner can send the file
                 if (!fileData.getUser().getId().equals(sender.getId())) {
+
                         throw new RuntimeException(
                                         "You can only send your own file by email");
                 }
 
                 // Don't allow files from Trash
                 if (fileData.isDeleted()) {
+
                         throw new RuntimeException(
                                         "You cannot send a file that is in Trash");
                 }
@@ -590,19 +563,21 @@ public class FileDataService {
 
                 String email = recipientEmail.trim();
 
-                // Check physical file
-                File file = new File(fileData.getFilePath());
+                // Validate Cloudinary URL
+                String fileUrl = fileData.getFilePath();
 
-                if (!file.exists()) {
+                if (fileUrl == null ||
+                                fileUrl.isBlank()) {
+
                         throw new RuntimeException(
-                                        "Physical file does not exist");
+                                        "File URL is empty");
                 }
 
                 try {
 
                         emailService.sendFile(
                                         email,
-                                        fileData.getFilePath(),
+                                        fileUrl,
                                         fileData.getFileName());
 
                         return "File sent successfully to " + email;
@@ -612,7 +587,8 @@ public class FileDataService {
                         e.printStackTrace();
 
                         throw new RuntimeException(
-                                        "Failed to send file by email: " + e.getMessage(),
+                                        "Failed to send file by email: "
+                                                        + e.getMessage(),
                                         e);
                 }
         }
@@ -723,24 +699,29 @@ public class FileDataService {
 
                 try {
 
-                        FileData fileData = fileDataRepository.findByShareToken(token)
+                        FileData fileData = fileDataRepository
+                                        .findByShareToken(token)
                                         .orElseThrow(() -> new RuntimeException("Invalid share link"));
 
                         if (!fileData.isLinkSharing()) {
-                                throw new RuntimeException("Sharing is disabled");
+                                throw new RuntimeException(
+                                                "Sharing is disabled");
                         }
 
-                        Path path = Paths.get(fileData.getFilePath()).normalize();
+                        if (fileData.getFilePath() == null ||
+                                        fileData.getFilePath().isBlank()) {
 
-                        if (!Files.exists(path)) {
-                                throw new RuntimeException("File does not exist");
+                                throw new RuntimeException(
+                                                "File URL is empty");
                         }
 
-                        return new UrlResource(path.toUri());
+                        return new UrlResource(fileData.getFilePath());
 
                 } catch (MalformedURLException e) {
 
-                        throw new RuntimeException("Download failed", e);
+                        throw new RuntimeException(
+                                        "Invalid Cloudinary URL",
+                                        e);
                 }
         }
 
@@ -759,15 +740,25 @@ public class FileDataService {
                 return fileDataRepository.save(fileData);
         }
 
-        public FileData uploadNewVersion(Long fileId, MultipartFile file, User user) {
+        public FileData uploadNewVersion(
+                        Long fileId,
+                        MultipartFile file,
+                        User user) {
 
                 try {
 
                         FileData oldFile = fileDataRepository.findById(fileId)
                                         .orElseThrow(() -> new RuntimeException("File not found"));
 
+                        // Security
                         if (!oldFile.getUser().getId().equals(user.getId())) {
-                                throw new RuntimeException("You are not the owner");
+                                throw new RuntimeException(
+                                                "You are not the owner");
+                        }
+
+                        if (file == null || file.isEmpty()) {
+                                throw new RuntimeException(
+                                                "Uploaded file is empty");
                         }
 
                         // Save old file as version history
@@ -780,20 +771,33 @@ public class FileDataService {
 
                         List<FileVersion> versions = fileVersionRepository.findByFileDataId(fileId);
 
-                        version.setVersionNumber(versions.size() + 1);
+                        version.setVersionNumber(
+                                        versions.size() + 1);
 
                         version.setFileData(oldFile);
 
                         fileVersionRepository.save(version);
 
-                        // Save new uploaded file
-                        String path = uploadDir + file.getOriginalFilename();
+                        // Upload new version to Cloudinary
+                        Map uploadResult = cloudinaryService.uploadFile(file);
 
-                        Files.write(
-                                        Paths.get(path),
-                                        file.getBytes());
+                        String secureUrl = (String) uploadResult.get("secure_url");
 
-                        oldFile.setFilePath(path);
+                        String publicId = (String) uploadResult.get("public_id");
+
+                        String resourceType = (String) uploadResult.get("resource_type");
+
+                        if (secureUrl == null ||
+                                        secureUrl.isBlank()) {
+
+                                throw new RuntimeException(
+                                                "Cloudinary did not return a file URL");
+                        }
+
+                        // Update current file
+                        oldFile.setFilePath(secureUrl);
+                        oldFile.setCloudinaryPublicId(publicId);
+                        oldFile.setCloudinaryResourceType(resourceType);
                         oldFile.setFileSize(file.getSize());
                         oldFile.setFileType(file.getContentType());
                         oldFile.setUploadDate(LocalDateTime.now());
@@ -802,7 +806,9 @@ public class FileDataService {
 
                 } catch (IOException e) {
 
-                        throw new RuntimeException("Version upload failed");
+                        throw new RuntimeException(
+                                        "Version upload failed",
+                                        e);
                 }
         }
 
@@ -876,19 +882,33 @@ public class FileDataService {
 
         public ResponseEntity<Resource> getSharedFile(String token) {
 
-                FileData file = fileDataRepository.findByShareToken(token)
-                                .orElseThrow(
-                                                () -> new RuntimeException("Invalid link"));
+                try {
 
-                Path path = Paths.get(file.getFilePath());
+                        FileData file = fileDataRepository
+                                        .findByShareToken(token)
+                                        .orElseThrow(() -> new RuntimeException("Invalid link"));
 
-                Resource resource = new FileSystemResource(path);
+                        if (file.getFilePath() == null ||
+                                        file.getFilePath().isBlank()) {
 
-                return ResponseEntity.ok()
-                                .contentType(
-                                                MediaType.parseMediaType(file.getFileType()))
-                                .body(resource);
+                                throw new RuntimeException(
+                                                "File URL is empty");
+                        }
 
+                        Resource resource = new UrlResource(file.getFilePath());
+
+                        return ResponseEntity.ok()
+                                        .contentType(
+                                                        MediaType.parseMediaType(
+                                                                        file.getFileType()))
+                                        .body(resource);
+
+                } catch (MalformedURLException e) {
+
+                        throw new RuntimeException(
+                                        "Invalid Cloudinary URL",
+                                        e);
+                }
         }
 
         public List<SearchResult> globalSearch(String query) {
@@ -1128,7 +1148,13 @@ public class FileDataService {
                 return "File moved to Trash";
         }
 
-        public FileData convertFile(Long fileId, String format, String email) {
+        public FileData convertFile(
+                        Long fileId,
+                        String format,
+                        String email) {
+
+                Path inputPath = null;
+                Path outputPath = null;
 
                 try {
 
@@ -1151,25 +1177,55 @@ public class FileDataService {
                         // =========================
 
                         if (!originalFile.getUser().getId().equals(user.getId())) {
+
                                 throw new RuntimeException(
                                                 "You can only convert your own files");
                         }
 
                         if (originalFile.isDeleted()) {
+
                                 throw new RuntimeException(
                                                 "You cannot convert a file in Trash");
                         }
 
                         // =========================
-                        // INPUT FILE
+                        // VALIDATE URL
                         // =========================
 
-                        Path inputPath = Paths.get(originalFile.getFilePath()).normalize();
+                        String fileUrl = originalFile.getFilePath();
 
-                        if (!Files.exists(inputPath)) {
+                        if (fileUrl == null ||
+                                        fileUrl.isBlank()) {
+
                                 throw new RuntimeException(
-                                                "Physical file does not exist");
+                                                "File URL is empty");
                         }
+
+                        // =========================
+                        // TEMP DIRECTORY
+                        // =========================
+
+                        Path tempDirectory = Files.createTempDirectory("minidrive-convert-");
+
+                        // =========================
+                        // DOWNLOAD CLOUDINARY FILE
+                        // =========================
+
+                        try (var inputStream = new UrlResource(fileUrl)
+                                        .getInputStream()) {
+
+                                inputPath = tempDirectory.resolve(
+                                                originalFile.getFileName());
+
+                                Files.copy(
+                                                inputStream,
+                                                inputPath,
+                                                StandardCopyOption.REPLACE_EXISTING);
+                        }
+
+                        // =========================
+                        // FILE INFORMATION
+                        // =========================
 
                         String originalName = originalFile.getFileName();
 
@@ -1183,11 +1239,9 @@ public class FileDataService {
 
                         format = format.toLowerCase().trim();
 
-                        Path outputPath;
-
-                        // =========================================================
+                        // =========================
                         // IMAGE -> PDF
-                        // =========================================================
+                        // =========================
 
                         if (format.equals("pdf")) {
 
@@ -1203,12 +1257,12 @@ public class FileDataService {
                                 BufferedImage image = ImageIO.read(inputPath.toFile());
 
                                 if (image == null) {
+
                                         throw new RuntimeException(
                                                         "Unable to read image");
                                 }
 
-                                outputPath = Paths.get(
-                                                uploadDir,
+                                outputPath = tempDirectory.resolve(
                                                 baseName + "_converted.pdf");
 
                                 createPdfFromImage(
@@ -1216,9 +1270,9 @@ public class FileDataService {
                                                 outputPath);
                         }
 
-                        // =========================================================
+                        // =========================
                         // PDF -> JPG / PNG
-                        // =========================================================
+                        // =========================
 
                         else if (format.equals("jpg") ||
                                         format.equals("png")) {
@@ -1229,9 +1283,10 @@ public class FileDataService {
                                                         "Only PDF files can be converted to images");
                                 }
 
-                                outputPath = Paths.get(
-                                                uploadDir,
-                                                baseName + "_converted." + format);
+                                outputPath = tempDirectory.resolve(
+                                                baseName +
+                                                                "_converted." +
+                                                                format);
 
                                 try (PDDocument document = Loader.loadPDF(inputPath.toFile())) {
 
@@ -1247,29 +1302,28 @@ public class FileDataService {
                                                         outputPath.toFile());
 
                                         if (!success) {
+
                                                 throw new RuntimeException(
                                                                 "Unable to create image");
                                         }
                                 }
                         }
 
-                        // =========================================================
+                        // =========================
                         // IMAGE -> DOCX
-                        // =========================================================
+                        // =========================
 
                         else if (format.equals("docx")) {
 
                                 if (!(extension.equals("jpg") ||
                                                 extension.equals("jpeg") ||
-                                                extension.equals("png") ||
-                                                extension.equals("webp"))) {
+                                                extension.equals("png"))) {
 
                                         throw new RuntimeException(
-                                                        "Only JPG, JPEG, PNG and WEBP files can be converted to DOCX");
+                                                        "Only JPG, JPEG and PNG files can be converted to DOCX");
                                 }
 
-                                outputPath = Paths.get(
-                                                uploadDir,
+                                outputPath = tempDirectory.resolve(
                                                 baseName + "_converted.docx");
 
                                 createDocxFromImage(
@@ -1278,42 +1332,63 @@ public class FileDataService {
                                                 extension);
                         }
 
-                        // =========================================================
-                        // UNSUPPORTED
-                        // =========================================================
-
                         else {
 
                                 throw new RuntimeException(
-                                                "Unsupported conversion format: " + format);
+                                                "Unsupported conversion format: " +
+                                                                format);
                         }
 
-                        // =========================================================
+                        // =========================
                         // CHECK OUTPUT
-                        // =========================================================
+                        // =========================
 
-                        File outputFile = outputPath.toFile();
-
-                        if (!outputFile.exists()) {
+                        if (!Files.exists(outputPath)) {
 
                                 throw new RuntimeException(
                                                 "Converted file was not created");
                         }
 
-                        // =========================================================
+                        // =========================
+                        // UPLOAD RESULT TO CLOUDINARY
+                        // =========================
+
+                        Map uploadResult = cloudinaryService.uploadBytes(
+                                        Files.readAllBytes(outputPath),
+                                        outputPath.getFileName().toString());
+                        String secureUrl = (String) uploadResult.get("secure_url");
+
+                        String publicId = (String) uploadResult.get("public_id");
+
+                        String resourceType = (String) uploadResult.get("resource_type");
+
+                        if (secureUrl == null ||
+                                        secureUrl.isBlank()) {
+
+                                throw new RuntimeException(
+                                                "Cloudinary did not return converted file URL");
+                        }
+
+                        // =========================
                         // CREATE DATABASE RECORD
-                        // =========================================================
+                        // =========================
 
                         FileData convertedFile = new FileData();
 
                         convertedFile.setFileName(
-                                        outputFile.getName());
+                                        outputPath.getFileName().toString());
 
                         convertedFile.setFilePath(
-                                        outputPath.toString());
+                                        secureUrl);
+
+                        convertedFile.setCloudinaryPublicId(
+                                        publicId);
+
+                        convertedFile.setCloudinaryResourceType(
+                                        resourceType);
 
                         convertedFile.setFileSize(
-                                        outputFile.length());
+                                        Files.size(outputPath));
 
                         convertedFile.setUploadDate(
                                         LocalDateTime.now());
@@ -1326,42 +1401,46 @@ public class FileDataService {
 
                         convertedFile.setHiddenFromRecent(false);
 
-                        // =========================
-                        // CONTENT TYPE
-                        // =========================
+                        convertedFile.setFileType(
+                                        getContentTypeForFormat(format));
 
-                        if (format.equals("pdf")) {
-
-                                convertedFile.setFileType(
-                                                "application/pdf");
-
-                        } else if (format.equals("docx")) {
-
-                                convertedFile.setFileType(
-                                                "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-
-                        } else {
-
-                                convertedFile.setFileType(
-                                                "image/" + format);
-                        }
-
-                        // =========================
-                        // SAVE
-                        // =========================
-
-                        FileData savedFile = fileDataRepository.save(convertedFile);
-
-                        return savedFile;
+                        return fileDataRepository.save(
+                                        convertedFile);
 
                 } catch (Exception e) {
 
                         e.printStackTrace();
 
                         throw new RuntimeException(
-                                        "File conversion failed: "
-                                                        + e.getMessage(),
+                                        "File conversion failed: " +
+                                                        e.getMessage(),
                                         e);
+
+                } finally {
+
+                        // =========================
+                        // DELETE TEMP FILES
+                        // =========================
+
+                        try {
+
+                                if (inputPath != null) {
+                                        Files.deleteIfExists(inputPath);
+                                }
+
+                                if (outputPath != null) {
+                                        Files.deleteIfExists(outputPath);
+                                }
+
+                                if (inputPath != null &&
+                                                inputPath.getParent() != null) {
+
+                                        Files.deleteIfExists(
+                                                        inputPath.getParent());
+                                }
+
+                        } catch (Exception ignored) {
+                        }
                 }
         }
 
@@ -1513,15 +1592,33 @@ public class FileDataService {
                         long targetSize,
                         String email) {
 
+                Path inputPath = null;
+                Path outputPath = null;
+
                 try {
 
+                        // =========================
+                        // GET USER
+                        // =========================
+
                         User user = userRepository.findByEmail(email)
-                                        .orElseThrow(() -> new RuntimeException("User not found"));
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "User not found"));
+
+                        // =========================
+                        // GET FILE
+                        // =========================
 
                         FileData originalFile = fileDataRepository.findById(fileId)
-                                        .orElseThrow(() -> new RuntimeException("File not found"));
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "File not found"));
 
-                        if (!originalFile.getUser().getId()
+                        // =========================
+                        // SECURITY
+                        // =========================
+
+                        if (!originalFile.getUser()
+                                        .getId()
                                         .equals(user.getId())) {
 
                                 throw new RuntimeException(
@@ -1534,13 +1631,40 @@ public class FileDataService {
                                                 "You cannot compress a file in Trash");
                         }
 
-                        Path inputPath = Paths.get(originalFile.getFilePath())
-                                        .normalize();
+                        // =========================
+                        // CLOUDINARY URL
+                        // =========================
 
-                        if (!Files.exists(inputPath)) {
+                        String fileUrl = originalFile.getFilePath();
+
+                        if (fileUrl == null ||
+                                        fileUrl.isBlank()) {
 
                                 throw new RuntimeException(
-                                                "Physical file does not exist");
+                                                "File URL is empty");
+                        }
+
+                        // =========================
+                        // TEMP DIRECTORY
+                        // =========================
+
+                        Path tempDirectory = Files.createTempDirectory(
+                                        "minidrive-compress-");
+
+                        // =========================
+                        // DOWNLOAD FROM CLOUDINARY
+                        // =========================
+
+                        try (var inputStream = new UrlResource(fileUrl)
+                                        .getInputStream()) {
+
+                                inputPath = tempDirectory.resolve(
+                                                originalFile.getFileName());
+
+                                Files.copy(
+                                                inputStream,
+                                                inputPath,
+                                                StandardCopyOption.REPLACE_EXISTING);
                         }
 
                         long originalSize = Files.size(inputPath);
@@ -1551,7 +1675,12 @@ public class FileDataService {
                                                 "Target size must be smaller than the original file");
                         }
 
-                        String extension = getExtension(originalFile.getFileName());
+                        // =========================
+                        // EXTENSION
+                        // =========================
+
+                        String extension = getExtension(
+                                        originalFile.getFileName());
 
                         if (!(extension.equals("jpg") ||
                                         extension.equals("jpeg") ||
@@ -1562,6 +1691,10 @@ public class FileDataService {
                                                 "Currently only JPG, JPEG, PNG and WEBP files can be compressed");
                         }
 
+                        // =========================
+                        // READ IMAGE
+                        // =========================
+
                         BufferedImage image = ImageIO.read(inputPath.toFile());
 
                         if (image == null) {
@@ -1570,17 +1703,24 @@ public class FileDataService {
                                                 "Unable to read image");
                         }
 
-                        String baseName = originalFile.getFileName()
-                                        .substring(
-                                                        0,
-                                                        originalFile.getFileName()
-                                                                        .lastIndexOf("."));
+                        String originalName = originalFile.getFileName();
 
-                        Path outputPath = Paths.get(
-                                        uploadDir,
+                        int dotIndex = originalName.lastIndexOf(".");
+
+                        String baseName = dotIndex > 0
+                                        ? originalName.substring(
+                                                        0,
+                                                        dotIndex)
+                                        : originalName;
+
+                        outputPath = tempDirectory.resolve(
                                         baseName +
                                                         "_compressed." +
                                                         extension);
+
+                        // =========================
+                        // COMPRESS
+                        // =========================
 
                         compressImageToTarget(
                                         image,
@@ -1588,24 +1728,53 @@ public class FileDataService {
                                         extension,
                                         targetSize);
 
-                        File outputFile = outputPath.toFile();
-
-                        if (!outputFile.exists()) {
+                        if (!Files.exists(outputPath)) {
 
                                 throw new RuntimeException(
                                                 "Compressed file was not created");
                         }
 
+                        // =========================
+                        // UPLOAD TO CLOUDINARY
+                        // =========================
+
+                        Map uploadResult = cloudinaryService.uploadBytes(
+                                        Files.readAllBytes(outputPath),
+                                        outputPath.getFileName().toString());
+
+                        String secureUrl = (String) uploadResult.get("secure_url");
+
+                        String publicId = (String) uploadResult.get("public_id");
+
+                        String resourceType = (String) uploadResult.get("resource_type");
+
+                        if (secureUrl == null ||
+                                        secureUrl.isBlank()) {
+
+                                throw new RuntimeException(
+                                                "Cloudinary did not return compressed file URL");
+                        }
+
+                        // =========================
+                        // DATABASE RECORD
+                        // =========================
+
                         FileData compressedFile = new FileData();
 
                         compressedFile.setFileName(
-                                        outputFile.getName());
+                                        outputPath.getFileName().toString());
 
                         compressedFile.setFilePath(
-                                        outputPath.toString());
+                                        secureUrl);
+
+                        compressedFile.setCloudinaryPublicId(
+                                        publicId);
+
+                        compressedFile.setCloudinaryResourceType(
+                                        resourceType);
 
                         compressedFile.setFileSize(
-                                        outputFile.length());
+                                        Files.size(outputPath));
 
                         compressedFile.setUploadDate(
                                         LocalDateTime.now());
@@ -1618,22 +1787,8 @@ public class FileDataService {
 
                         compressedFile.setHiddenFromRecent(false);
 
-                        if (extension.equals("jpg") ||
-                                        extension.equals("jpeg")) {
-
-                                compressedFile.setFileType(
-                                                "image/jpeg");
-
-                        } else if (extension.equals("png")) {
-
-                                compressedFile.setFileType(
-                                                "image/png");
-
-                        } else {
-
-                                compressedFile.setFileType(
-                                                "image/webp");
-                        }
+                        compressedFile.setFileType(
+                                        getContentTypeForFormat(extension));
 
                         return fileDataRepository.save(
                                         compressedFile);
@@ -1643,127 +1798,61 @@ public class FileDataService {
                         e.printStackTrace();
 
                         throw new RuntimeException(
-                                        "File compression failed: "
-                                                        + e.getMessage(),
+                                        "File compression failed: " +
+                                                        e.getMessage(),
                                         e);
+
+                } finally {
+
+                        // =========================
+                        // DELETE TEMP FILES
+                        // =========================
+
+                        try {
+
+                                if (inputPath != null) {
+                                        Files.deleteIfExists(inputPath);
+                                }
+
+                                if (outputPath != null) {
+                                        Files.deleteIfExists(outputPath);
+                                }
+
+                                if (inputPath != null &&
+                                                inputPath.getParent() != null) {
+
+                                        Files.deleteIfExists(
+                                                        inputPath.getParent());
+                                }
+
+                        } catch (Exception ignored) {
+                        }
                 }
         }
 
-        private void compressImageToTarget(
-                        BufferedImage image,
-                        Path outputPath,
-                        String extension,
-                        long targetSize) throws IOException {
+        private String getContentTypeForFormat(String format) {
 
-                if (extension.equals("png")) {
+                switch (format.toLowerCase()) {
 
-                        // PNG doesn't have a simple quality setting.
-                        // Resize progressively if necessary.
+                        case "pdf":
+                                return "application/pdf";
 
-                        BufferedImage current = image;
+                        case "docx":
+                                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-                        for (int i = 0; i < 5; i++) {
+                        case "jpg":
+                        case "jpeg":
+                                return "image/jpeg";
 
-                                ImageIO.write(
-                                                current,
-                                                "png",
-                                                outputPath.toFile());
+                        case "png":
+                                return "image/png";
 
-                                if (Files.size(outputPath) <= targetSize) {
-                                        return;
-                                }
+                        case "webp":
+                                return "image/webp";
 
-                                int newWidth = (int) (current.getWidth() * 0.8);
-
-                                int newHeight = (int) (current.getHeight() * 0.8);
-
-                                BufferedImage resized = new BufferedImage(
-                                                newWidth,
-                                                newHeight,
-                                                BufferedImage.TYPE_INT_RGB);
-
-                                var graphics = resized.createGraphics();
-
-                                graphics.drawImage(
-                                                current,
-                                                0,
-                                                0,
-                                                newWidth,
-                                                newHeight,
-                                                null);
-
-                                graphics.dispose();
-
-                                current = resized;
-                        }
-
-                        return;
+                        default:
+                                return "application/octet-stream";
                 }
-
-                float quality = 0.90f;
-
-                for (int i = 0; i < 15; i++) {
-
-                        writeJpeg(
-                                        image,
-                                        outputPath,
-                                        quality);
-
-                        long size = Files.size(outputPath);
-
-                        if (size <= targetSize) {
-                                return;
-                        }
-
-                        quality -= 0.05f;
-
-                        if (quality < 0.10f) {
-                                break;
-                        }
-                }
-
-                // If quality alone wasn't enough,
-                // progressively resize the image.
-
-                BufferedImage current = image;
-
-                for (int i = 0; i < 8; i++) {
-
-                        int newWidth = (int) (current.getWidth() * 0.8);
-
-                        int newHeight = (int) (current.getHeight() * 0.8);
-
-                        BufferedImage resized = new BufferedImage(
-                                        newWidth,
-                                        newHeight,
-                                        BufferedImage.TYPE_INT_RGB);
-
-                        var graphics = resized.createGraphics();
-
-                        graphics.drawImage(
-                                        current,
-                                        0,
-                                        0,
-                                        newWidth,
-                                        newHeight,
-                                        null);
-
-                        graphics.dispose();
-
-                        current = resized;
-
-                        writeJpeg(
-                                        current,
-                                        outputPath,
-                                        0.60f);
-
-                        if (Files.size(outputPath) <= targetSize) {
-                                return;
-                        }
-                }
-
-                throw new RuntimeException(
-                                "Unable to compress image to requested size");
         }
 
         private void writeJpeg(
@@ -1839,33 +1928,168 @@ public class FileDataService {
                                         "You are not allowed to view this file");
                 }
 
+                if (fileData.getFilePath() == null ||
+                                fileData.getFilePath().isBlank()) {
+
+                        throw new RuntimeException("File URL is empty");
+                }
+
+                fileData.setLastAccessed(LocalDateTime.now());
+                fileDataRepository.save(fileData);
+
+                // IMPORTANT: Cloudinary URL
                 try {
+                        return new UrlResource(fileData.getFilePath());
+                } catch (MalformedURLException e) {
+                        throw new RuntimeException(
+                                        "Invalid Cloudinary URL", e);
+                }
+        }
 
-                        if (fileData.getFilePath() == null ||
-                                        fileData.getFilePath().isBlank()) {
+        private void compressImageToTarget(
+                        BufferedImage image,
+                        Path outputPath,
+                        String extension,
+                        long targetSize) throws IOException {
 
-                                throw new RuntimeException(
-                                                "File URL is empty");
+                extension = extension.toLowerCase();
+
+                // =========================
+                // PNG
+                // =========================
+
+                if (extension.equals("png")) {
+
+                        BufferedImage current = image;
+
+                        for (int i = 0; i < 8; i++) {
+
+                                ImageIO.write(
+                                                current,
+                                                "png",
+                                                outputPath.toFile());
+
+                                if (Files.size(outputPath) <= targetSize) {
+                                        return;
+                                }
+
+                                int newWidth = Math.max(
+                                                1,
+                                                (int) (current.getWidth() * 0.8));
+
+                                int newHeight = Math.max(
+                                                1,
+                                                (int) (current.getHeight() * 0.8));
+
+                                BufferedImage resized = new BufferedImage(
+                                                newWidth,
+                                                newHeight,
+                                                BufferedImage.TYPE_INT_RGB);
+
+                                var graphics = resized.createGraphics();
+
+                                graphics.drawImage(
+                                                current,
+                                                0,
+                                                0,
+                                                newWidth,
+                                                newHeight,
+                                                null);
+
+                                graphics.dispose();
+
+                                current = resized;
                         }
 
-                        System.out.println("=================================");
-                        System.out.println("VIEW FILE");
-                        System.out.println("FILE ID: " + id);
-                        System.out.println("FILE NAME: " + fileData.getFileName());
-                        System.out.println("CLOUDINARY URL: " + fileData.getFilePath());
-                        System.out.println("=================================");
+                        throw new RuntimeException(
+                                        "Unable to compress PNG to requested size");
+                }
 
-                        fileData.setLastAccessed(LocalDateTime.now());
+                // =========================
+                // JPEG / JPG
+                // =========================
 
-                        fileDataRepository.save(fileData);
+                if (extension.equals("jpg") ||
+                                extension.equals("jpeg")) {
 
-                        return new UrlResource(fileData.getFilePath());
+                        float quality = 0.90f;
 
-                } catch (MalformedURLException e) {
+                        for (int i = 0; i < 15; i++) {
+
+                                writeJpeg(
+                                                image,
+                                                outputPath,
+                                                quality);
+
+                                if (Files.size(outputPath) <= targetSize) {
+                                        return;
+                                }
+
+                                quality -= 0.05f;
+
+                                if (quality < 0.10f) {
+                                        break;
+                                }
+                        }
+
+                        // Resize if quality alone is not enough
+                        BufferedImage current = image;
+
+                        for (int i = 0; i < 8; i++) {
+
+                                int newWidth = Math.max(
+                                                1,
+                                                (int) (current.getWidth() * 0.8));
+
+                                int newHeight = Math.max(
+                                                1,
+                                                (int) (current.getHeight() * 0.8));
+
+                                BufferedImage resized = new BufferedImage(
+                                                newWidth,
+                                                newHeight,
+                                                BufferedImage.TYPE_INT_RGB);
+
+                                var graphics = resized.createGraphics();
+
+                                graphics.drawImage(
+                                                current,
+                                                0,
+                                                0,
+                                                newWidth,
+                                                newHeight,
+                                                null);
+
+                                graphics.dispose();
+
+                                current = resized;
+
+                                writeJpeg(
+                                                current,
+                                                outputPath,
+                                                0.60f);
+
+                                if (Files.size(outputPath) <= targetSize) {
+                                        return;
+                                }
+                        }
 
                         throw new RuntimeException(
-                                        "Invalid Cloudinary URL",
-                                        e);
+                                        "Unable to compress image to requested size");
                 }
+
+                // =========================
+                // WEBP
+                // =========================
+
+                if (extension.equals("webp")) {
+
+                        throw new RuntimeException(
+                                        "WEBP compression requires a WebP ImageIO plugin. " +
+                                                        "Please convert the WEBP to JPG or PNG first.");
+                }
+
+                throw new RuntimeException(
+                                "Unsupported image format: " + extension);
         }
 }

@@ -23,18 +23,31 @@ public class CloudinaryService {
                 file.getBytes(),
                 ObjectUtils.asMap(
                         "resource_type", "auto",
-                        "folder", "minigoogledrive"
-                )
-        );
+                        "folder", "minigoogledrive"));
     }
 
-    public void deleteFile(String publicId, String resourceType) throws IOException {
+    // Upload byte[] directly
+    public Map uploadBytes(
+            byte[] fileBytes,
+            String fileName) throws IOException {
+
+        return cloudinary.uploader().upload(
+                fileBytes,
+                ObjectUtils.asMap(
+                        "resource_type", "auto",
+                        "folder", "minigoogledrive",
+                        "use_filename", true,
+                        "unique_filename", true));
+    }
+
+    public void deleteFile(
+            String publicId,
+            String resourceType) throws IOException {
 
         cloudinary.uploader().destroy(
                 publicId,
                 ObjectUtils.asMap(
-                        "resource_type", resourceType
-                )
-        );
+                        "resource_type",
+                        resourceType));
     }
 }
