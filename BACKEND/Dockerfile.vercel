@@ -17,4 +17,4 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-ENTRYPOINT ["/opt/java/openjdk/bin/java", "-jar", "app.jar"]
+CMD ["/opt/java/openjdk/bin/java", "-jar", "app.jar"]
