@@ -206,31 +206,12 @@ function FileCard({
     // OPEN FILE
     // =========================
 
-    const openFile = async (id) => {
-
+    const openFile = async (file) => {
         try {
+            console.log("OPEN FILE:", file.id);
 
-            console.log("OPEN FILE:", id);
-
-            // Mark file as viewed
-            try {
-
-                await API.get(
-                    `/files/mark-viewed/${id}`
-                );
-
-            } catch (error) {
-
-                console.log(
-                    "Mark viewed failed:",
-                    error.response?.data || error.message
-                );
-
-            }
-
-            // Get file from backend
             const response = await API.get(
-                `/files/view/${id}`,
+                `/files/view/${file.id}`,
                 {
                     responseType: "blob"
                 }
@@ -242,32 +223,32 @@ function FileCard({
                 response.headers["content-type"]
             );
 
-            // Create blob
-            const blob = new Blob(
-                [response.data],
-                {
-                    type:
-                        response.headers["content-type"] ||
-                        "application/octet-stream"
-                }
-            );
+            if (response.status === 200 && response.data.size > 0) {
 
-            // Create temporary URL
-            const url = window.URL.createObjectURL(blob);
+                const blob = new Blob(
+                    [response.data],
+                    {
+                        type:
+                            response.headers["content-type"] ||
+                            file.fileType ||
+                            "application/octet-stream"
+                    }
+                );
 
-            // Open in new tab
-            const newTab = window.open(url, "_blank");
+                const url = window.URL.createObjectURL(blob);
 
-            if (!newTab) {
-                alert("Please allow pop-ups for this website.");
-                window.URL.revokeObjectURL(url);
-                return;
+                window.open(url, "_blank");
+
+                alert("✅ File opened successfully");
+
+                // Release memory after opening
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                }, 10000);
+
+            } else {
+                alert("❌ File opening denied");
             }
-
-            // Release object URL after some time
-            setTimeout(() => {
-                window.URL.revokeObjectURL(url);
-            }, 60000);
 
         } catch (error) {
 
@@ -276,13 +257,14 @@ function FileCard({
                 error.response?.data || error
             );
 
-            alert(
-                error.response?.data?.message ||
-                "Cannot open file"
-            );
-
+            if (error.response?.status === 403) {
+                alert("❌ File opening denied: You don't have permission.");
+            } else if (error.response?.status === 404) {
+                alert("❌ File opening denied: File not found.");
+            } else {
+                alert("❌ File opening denied.");
+            }
         }
-
     };
 
 

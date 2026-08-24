@@ -8,7 +8,7 @@ function FileUpload({ refreshFiles }) {
     const [fileName, setFileName] = useState("");
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-
+    const [uploadMessage, setUploadMessage] = useState("");
 
     const uploadFile = async () => {
 
@@ -29,15 +29,12 @@ function FileUpload({ refreshFiles }) {
 
             setUploading(true);
             setUploadProgress(0);
+            setUploadMessage("Uploading your file...");
 
             const response = await API.post(
                 "/files/upload",
                 formData,
                 {
-                    headers: {
-                        "Content-Type": "multipart/form-data"
-                    },
-
                     onUploadProgress: (progressEvent) => {
 
                         if (progressEvent.total) {
@@ -48,6 +45,16 @@ function FileUpload({ refreshFiles }) {
                             );
 
                             setUploadProgress(percent);
+
+                            if (percent < 100) {
+                                setUploadMessage(
+                                    `Uploading your file... ${percent}%`
+                                );
+                            } else {
+                                setUploadMessage(
+                                    "Processing file... 100%"
+                                );
+                            }
                         }
                     }
                 }
@@ -56,19 +63,13 @@ function FileUpload({ refreshFiles }) {
             console.log("UPLOAD SUCCESS:", response.data);
 
             setUploadProgress(100);
+            setUploadMessage("✅ File uploaded successfully!");
 
-            // Clear selected file
             setFile(null);
             setFileName("");
 
-            // IMPORTANT:
-            // Wait until backend/database operation is complete
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Reload files from backend
+            // Refresh dashboard after successful upload
             await refreshFiles();
-
-            alert("File uploaded successfully");
 
         } catch (error) {
 
@@ -77,19 +78,20 @@ function FileUpload({ refreshFiles }) {
                 error.response?.data || error
             );
 
+            setUploadMessage("❌ File upload failed");
+
             alert(
                 error.response?.data?.message ||
-                "Upload failed"
+                "File upload failed"
             );
 
         } finally {
 
             setTimeout(() => {
-
                 setUploading(false);
                 setUploadProgress(0);
-
-            }, 1000);
+                setUploadMessage("");
+            }, 2000);
         }
     };
 
@@ -98,9 +100,13 @@ function FileUpload({ refreshFiles }) {
 
             <label className="choose-file">
                 📁 Choose File
+
                 <input
                     type="file"
-                    onChange={(e) => setFile(e.target.files[0])}
+                    onChange={(e) => {
+                        setFile(e.target.files[0]);
+                        setUploadMessage("");
+                    }}
                     hidden
                 />
             </label>
@@ -122,18 +128,32 @@ function FileUpload({ refreshFiles }) {
             >
                 {uploading ? "Uploading..." : "⬆ Upload"}
             </button>
+
+
+            {/* UPLOAD PROGRESS */}
+
             {uploading && (
                 <div className="upload-progress">
-                    <div className="upload-progress-text">
-                        Uploading... {uploadProgress}%
+
+                    <div className="upload-progress-message">
+                        {uploadMessage}
                     </div>
 
                     <div className="progress-track">
+
                         <div
                             className="progress-bar"
-                            style={{ width: `${uploadProgress}%` }}
+                            style={{
+                                width: `${uploadProgress}%`
+                            }}
                         />
+
                     </div>
+
+                    <div className="upload-percentage">
+                        {uploadProgress}%
+                    </div>
+
                 </div>
             )}
 
