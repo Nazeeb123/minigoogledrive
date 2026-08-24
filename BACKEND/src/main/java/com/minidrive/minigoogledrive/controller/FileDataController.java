@@ -454,6 +454,7 @@ public class FileDataController {
                         Authentication authentication) {
 
                 try {
+
                         String email = authentication.getName();
 
                         FileData fileData = fileDataRepository.findById(id)
@@ -467,16 +468,23 @@ public class FileDataController {
                                 contentType = "application/octet-stream";
                         }
 
+                        System.out.println("========== VIEW FILE ==========");
+                        System.out.println("ID: " + id);
+                        System.out.println("NAME: " + fileData.getFileName());
+                        System.out.println("TYPE: " + fileData.getFileType());
+                        System.out.println("PATH: " + fileData.getFilePath());
+                        System.out.println("CONTENT TYPE: " + contentType);
+                        System.out.println("===============================");
+
                         return ResponseEntity.ok()
                                         .contentType(MediaType.parseMediaType(contentType))
                                         .header(
                                                         "Content-Disposition",
-                                                        "inline; filename=\"" +
-                                                                        fileData.getFileName() +
-                                                                        "\"")
+                                                        "inline; filename=\"" + fileData.getFileName() + "\"")
                                         .body(resource);
 
                 } catch (Exception e) {
+
                         e.printStackTrace();
 
                         return ResponseEntity

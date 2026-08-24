@@ -1917,32 +1917,48 @@ public class FileDataService {
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-                boolean isOwner = fileData.getUser() != null &&
-                                fileData.getUser().getId().equals(user.getId());
+                boolean isOwner = fileData.getUser() != null
+                                && fileData.getUser().getId().equals(user.getId());
 
-                boolean isShared = fileData.getSharedUsers() != null &&
-                                fileData.getSharedUsers().contains(user);
+                boolean isShared = fileData.getSharedUsers() != null
+                                && fileData.getSharedUsers().contains(user);
 
                 if (!isOwner && !isShared) {
-                        throw new RuntimeException(
-                                        "You are not allowed to view this file");
+                        throw new RuntimeException("You are not allowed to view this file");
                 }
 
-                if (fileData.getFilePath() == null ||
-                                fileData.getFilePath().isBlank()) {
+                String filePath = fileData.getFilePath();
 
+                if (filePath == null || filePath.isBlank()) {
                         throw new RuntimeException("File URL is empty");
                 }
 
                 fileData.setLastAccessed(LocalDateTime.now());
                 fileDataRepository.save(fileData);
 
-                // IMPORTANT: Cloudinary URL
                 try {
-                        return new UrlResource(fileData.getFilePath());
-                } catch (MalformedURLException e) {
+
+                        // Cloudinary / remote URL
+                        if (filePath.startsWith("http://") ||
+                                        filePath.startsWith("https://")) {
+
+                                return new UrlResource(filePath);
+                        }
+
+                        // Local file
+                        Path path = Paths.get(filePath);
+
+                        if (!Files.exists(path)) {
+                                throw new RuntimeException(
+                                                "File does not exist on server: " + filePath);
+                        }
+
+                        return new FileSystemResource(path.toFile());
+
+                } catch (Exception e) {
+
                         throw new RuntimeException(
-                                        "Invalid Cloudinary URL", e);
+                                        "Could not open file: " + filePath, e);
                 }
         }
 
