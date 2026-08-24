@@ -159,17 +159,15 @@ public class FileDataController {
                 return ResponseEntity.ok(files);
         }
 
-        public List<FileData> getMyFiles() {
-
-                Authentication authentication = SecurityContextHolder
-                                .getContext()
-                                .getAuthentication();
+        @GetMapping("/my")
+        public ResponseEntity<List<FileData>> getMyFiles(
+                        Authentication authentication) {
 
                 if (authentication == null ||
                                 !authentication.isAuthenticated() ||
                                 "anonymousUser".equals(authentication.getName())) {
 
-                        throw new RuntimeException("User is not authenticated");
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
                 }
 
                 String email = authentication.getName();
@@ -177,10 +175,10 @@ public class FileDataController {
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-                return fileDataRepository
-                                .findByUserAndDeletedFalse(user);
-        }
+                List<FileData> files = fileDataRepository.findByUserAndDeletedFalse(user);
 
+                return ResponseEntity.ok(files);
+        }
         // Get logged-in user's files
 
         @GetMapping("/download/{id}")
@@ -453,44 +451,53 @@ public class FileDataController {
                         @PathVariable Long id,
                         Authentication authentication) {
 
-                try {
+                String email = authentication.getName();
 
-                        String email = authentication.getName();
+                Resource resource = fileDataService.viewFile(id, email);
 
-                        FileData fileData = fileDataRepository.findById(id)
-                                        .orElseThrow(() -> new RuntimeException("File not found"));
+                FileData fileData = fileDataRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("File not found"));
 
-                        Resource resource = fileDataService.viewFile(id, email);
+                String contentType = fileData.getFileType();
 
-                        String contentType = fileData.getFileType();
+                if (contentType == null || contentType.isBlank()) {
 
-                        if (contentType == null || contentType.isBlank()) {
+                        String fileName = fileData.getFileName();
+
+                        if (fileName != null) {
+
+                                String lower = fileName.toLowerCase();
+
+                                if (lower.endsWith(".pdf")) {
+                                        contentType = "application/pdf";
+
+                                } else if (lower.endsWith(".png")) {
+                                        contentType = "image/png";
+
+                                } else if (lower.endsWith(".jpg") ||
+                                                lower.endsWith(".jpeg")) {
+                                        contentType = "image/jpeg";
+
+                                } else if (lower.endsWith(".gif")) {
+                                        contentType = "image/gif";
+
+                                } else if (lower.endsWith(".txt")) {
+                                        contentType = "text/plain";
+
+                                } else {
+                                        contentType = "application/octet-stream";
+                                }
+                        } else {
                                 contentType = "application/octet-stream";
                         }
-
-                        System.out.println("========== VIEW FILE ==========");
-                        System.out.println("ID: " + id);
-                        System.out.println("NAME: " + fileData.getFileName());
-                        System.out.println("TYPE: " + fileData.getFileType());
-                        System.out.println("PATH: " + fileData.getFilePath());
-                        System.out.println("CONTENT TYPE: " + contentType);
-                        System.out.println("===============================");
-
-                        return ResponseEntity.ok()
-                                        .contentType(MediaType.parseMediaType(contentType))
-                                        .header(
-                                                        "Content-Disposition",
-                                                        "inline; filename=\"" + fileData.getFileName() + "\"")
-                                        .body(resource);
-
-                } catch (Exception e) {
-
-                        e.printStackTrace();
-
-                        return ResponseEntity
-                                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                        .build();
                 }
+
+                return ResponseEntity.ok()
+                                .contentType(MediaType.parseMediaType(contentType))
+                                .header(
+                                                "Content-Disposition",
+                                                "inline; filename=\"" + fileData.getFileName() + "\"")
+                                .body(resource);
         }
 
         @GetMapping("/shared/count")

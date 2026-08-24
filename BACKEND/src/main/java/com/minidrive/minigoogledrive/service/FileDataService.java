@@ -1933,32 +1933,42 @@ public class FileDataService {
                         throw new RuntimeException("File URL is empty");
                 }
 
+                System.out.println("========== VIEW FILE ==========");
+                System.out.println("FILE ID: " + id);
+                System.out.println("FILE NAME: " + fileData.getFileName());
+                System.out.println("FILE TYPE: " + fileData.getFileType());
+                System.out.println("FILE PATH: " + filePath);
+                System.out.println("================================");
+
                 fileData.setLastAccessed(LocalDateTime.now());
                 fileDataRepository.save(fileData);
 
                 try {
 
-                        // Cloudinary / remote URL
+                        // Cloudinary URL
                         if (filePath.startsWith("http://") ||
                                         filePath.startsWith("https://")) {
 
                                 return new UrlResource(filePath);
                         }
 
-                        // Local file
+                        // Old local files
                         Path path = Paths.get(filePath);
 
                         if (!Files.exists(path)) {
                                 throw new RuntimeException(
-                                                "File does not exist on server: " + filePath);
+                                                "File does not exist: " + filePath);
                         }
 
-                        return new FileSystemResource(path.toFile());
+                        return new FileSystemResource(path);
 
                 } catch (Exception e) {
 
+                        e.printStackTrace();
+
                         throw new RuntimeException(
-                                        "Could not open file: " + filePath, e);
+                                        "Could not open file: " + fileData.getFileName(),
+                                        e);
                 }
         }
 
