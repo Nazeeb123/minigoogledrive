@@ -73,6 +73,8 @@ public class FileDataService {
         private FileVersionRepository fileVersionRepository;
         @Autowired
         private NotificationService notificationService;
+        @Autowired
+        private CloudinaryService cloudinaryService;
 
         @Autowired
         private EmbeddingService embeddingService;
@@ -99,6 +101,7 @@ public class FileDataService {
                                 .orElseThrow(() -> new RuntimeException("User not found for email: " + email));
         }
 
+        // Upload File
         // Upload File
         public FileData uploadFile(
                         MultipartFile file,
@@ -127,20 +130,53 @@ public class FileDataService {
 
                 try {
 
-                        File directory = new File(uploadDir);
+                        // =========================
+                        // UPLOAD TO CLOUDINARY
+                        // =========================
 
-                        if (!directory.exists() && !directory.mkdirs()) {
+                        Map uploadResult = cloudinaryService.uploadFile(file);
+
+                        String secureUrl = (String) uploadResult.get("secure_url");
+
+                        String publicId = (String) uploadResult.get("public_id");
+
+                        String resourceType = (String) uploadResult.get("resource_type");
+
+                        if (secureUrl == null || secureUrl.isBlank()) {
                                 throw new RuntimeException(
-                                                "Could not create uploads directory");
+                                                "Cloudinary did not return a file URL");
                         }
 
-                        /*
-                         * IMPORTANT:
-                         *
-                         * The database/display filename remains the original name.
-                         * The physical filename gets a UUID so two users can upload
-                         * files with the same name without overwriting each other.
-                         */
+                        // =========================
+                        // GET USER
+                        // =========================
+
+                        User user = userRepository
+                                        .findByEmail(email)
+                                        .orElseThrow(() -> new RuntimeException("User not found"));
+
+                        // =========================
+                        // GET FOLDER
+                        // =========================
+
+                        Folder folder = null;
+
+                        if (folderId != null) {
+
+                                folder = folderRepository
+                                                .findById(folderId)
+                                                .orElseThrow(() -> new RuntimeException("Folder not found"));
+
+                                if (!folder.getUser().getId().equals(user.getId())) {
+                                        throw new RuntimeException(
+                                                        "You cannot upload to this folder");
+                                }
+                        }
+
+                        // =========================
+                        // ORIGINAL FILE NAME
+                        // =========================
+
                         String originalFileName = file.getOriginalFilename();
 
                         if (originalFileName == null ||
@@ -149,112 +185,63 @@ public class FileDataService {
                                 originalFileName = "uploaded-file";
                         }
 
-                        originalFileName = Paths.get(originalFileName)
-                                        .getFileName()
-                                        .toString();
-
-                        String storedFileName = UUID.randomUUID()
-                                        .toString()
-                                        + "_"
-                                        + originalFileName;
-
-                        Path filePath = Paths.get(
-                                        uploadDir,
-                                        storedFileName);
-
-                        Files.copy(
-                                        file.getInputStream(),
-                                        filePath,
-                                        StandardCopyOption.REPLACE_EXISTING);
-
-                        User user = userRepository
-                                        .findByEmail(email)
-                                        .orElseThrow(() -> new RuntimeException("User not found"));
-
-                        Folder folder = null;
-
-                        if (folderId != null) {
-
-                                folder = folderRepository
-                                                .findById(folderId)
-                                                .orElseThrow(() -> new RuntimeException(
-                                                                "Folder not found"));
-                        }
+                        // =========================
+                        // CREATE DATABASE RECORD
+                        // =========================
 
                         FileData fileData = new FileData();
 
-                        /*
-                         * DISPLAY NAME
-                         */
                         fileData.setFileName(
                                         fileName != null &&
                                                         !fileName.trim().isEmpty()
                                                                         ? fileName
                                                                         : originalFileName);
 
-                        /*
-                         * UNIQUE PHYSICAL PATH
-                         */
-                        fileData.setFileType(
-                                        file.getContentType());
+                        // IMPORTANT:
+                        // Store Cloudinary URL instead of local path
+                        fileData.setFilePath(secureUrl);
 
-                        fileData.setFilePath(
-                                        filePath.toString());
+                        fileData.setCloudinaryPublicId(publicId);
 
-                        fileData.setFileSize(
-                                        file.getSize());
+                        fileData.setCloudinaryResourceType(resourceType);
 
-                        fileData.setUploadDate(
-                                        LocalDateTime.now());
+                        fileData.setFileType(contentType);
+
+                        fileData.setFileSize(file.getSize());
+
+                        fileData.setUploadDate(LocalDateTime.now());
 
                         fileData.setUser(user);
 
                         fileData.setFolder(folder);
 
+                        fileData.setDeleted(false);
+
+                        fileData.setStarred(false);
+
+                        fileData.setHiddenFromRecent(false);
+
                         FileData savedFile = fileDataRepository.save(fileData);
 
-                        /*
-                         * Generate semantic-search embedding.
-                         */
-                        embeddingService.generateEmbedding(
-                                        savedFile);
+                        // =========================
+                        // EMBEDDING
+                        // =========================
+
+                        embeddingService.generateEmbedding(savedFile);
 
                         return savedFile;
 
                 } catch (IOException e) {
 
                         throw new RuntimeException(
-                                        "File upload failed",
+                                        "Cloudinary upload failed",
                                         e);
                 }
         }
 
         // Get all files
         public List<FileData> getAllFiles() {
-
                 return fileDataRepository.findAll();
-        }
-
-        public List<FileData> getMyFiles() {
-
-                var authentication = SecurityContextHolder
-                                .getContext()
-                                .getAuthentication();
-
-                System.out.println("AUTH OBJECT: " + authentication);
-
-                System.out.println(
-                                "AUTH NAME: " + authentication.getName());
-
-                System.out.println(
-                                "AUTH CLASS: " + authentication.getClass());
-
-                String email = authentication.getName();
-
-                User user = userRepository.findByEmail(email)
-                                .orElseThrow(() -> new RuntimeException("User not found"));
-
-                return fileDataRepository.findByUserAndDeletedFalse(user);
         }
 
         // Download file (secured)
@@ -1848,27 +1835,37 @@ public class FileDataService {
                                 fileData.getSharedUsers().contains(user);
 
                 if (!isOwner && !isShared) {
-                        throw new RuntimeException("You are not allowed to view this file");
-                }
-
-                Path path = resolveFilePath(fileData.getFilePath());
-
-                System.out.println("=================================");
-                System.out.println("VIEW FILE");
-                System.out.println("FILE ID: " + id);
-                System.out.println("FILE NAME: " + fileData.getFileName());
-                System.out.println("DATABASE PATH: " + fileData.getFilePath());
-                System.out.println("UPLOAD DIR: " + uploadDir);
-                System.out.println("RESOLVED PATH: " + path);
-                System.out.println("EXISTS: " + Files.exists(path));
-                System.out.println("=================================");
-
-                if (!Files.exists(path)) {
                         throw new RuntimeException(
-                                        "Physical file not found: " + path);
+                                        "You are not allowed to view this file");
                 }
 
-                return new FileSystemResource(path);
-        }
+                try {
 
+                        if (fileData.getFilePath() == null ||
+                                        fileData.getFilePath().isBlank()) {
+
+                                throw new RuntimeException(
+                                                "File URL is empty");
+                        }
+
+                        System.out.println("=================================");
+                        System.out.println("VIEW FILE");
+                        System.out.println("FILE ID: " + id);
+                        System.out.println("FILE NAME: " + fileData.getFileName());
+                        System.out.println("CLOUDINARY URL: " + fileData.getFilePath());
+                        System.out.println("=================================");
+
+                        fileData.setLastAccessed(LocalDateTime.now());
+
+                        fileDataRepository.save(fileData);
+
+                        return new UrlResource(fileData.getFilePath());
+
+                } catch (MalformedURLException e) {
+
+                        throw new RuntimeException(
+                                        "Invalid Cloudinary URL",
+                                        e);
+                }
+        }
 }

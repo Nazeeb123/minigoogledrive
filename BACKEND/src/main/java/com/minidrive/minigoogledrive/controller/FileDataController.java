@@ -103,14 +103,30 @@ public class FileDataController {
                 return ResponseEntity.ok(files);
         }
 
-        // Get logged-in user's files
-        @GetMapping("/my")
-        public ResponseEntity<List<FileData>> getMyFiles() {
+        public List<FileData> getMyFiles() {
 
-                List<FileData> files = fileDataService.getMyFiles();
+                Authentication authentication = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication();
 
-                return ResponseEntity.ok(files);
+                if (authentication == null ||
+                                !authentication.isAuthenticated() ||
+                                "anonymousUser".equals(authentication.getName())) {
+
+                        throw new RuntimeException("User is not authenticated");
+                }
+
+                String email = authentication.getName();
+
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
+
+                return fileDataRepository
+                                .findByUserAndDeletedFalse(user);
         }
+
+        // Get logged-in user's files
+        
 
         @GetMapping("/download/{id}")
         public ResponseEntity<Resource> downloadFile(

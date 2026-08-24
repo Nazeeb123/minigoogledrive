@@ -25,6 +25,9 @@ public class FileData {
     private String fileType;
 
     private long fileSize;
+    private String cloudinaryPublicId;
+
+    private String cloudinaryResourceType;
 
     private LocalDateTime uploadDate;
     private boolean deleted = false;
@@ -218,5 +221,21 @@ public class FileData {
 
     public void setEmbedding(String embedding) {
         this.embedding = embedding;
+    }
+
+    public String getCloudinaryPublicId() {
+        return cloudinaryPublicId;
+    }
+
+    public void setCloudinaryPublicId(String cloudinaryPublicId) {
+        this.cloudinaryPublicId = cloudinaryPublicId;
+    }
+
+    public String getCloudinaryResourceType() {
+        return cloudinaryResourceType;
+    }
+
+    public void setCloudinaryResourceType(String cloudinaryResourceType) {
+        this.cloudinaryResourceType = cloudinaryResourceType;
     }
 }
