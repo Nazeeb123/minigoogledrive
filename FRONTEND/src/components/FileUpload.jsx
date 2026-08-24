@@ -34,6 +34,10 @@ function FileUpload({ refreshFiles }) {
                 "/files/upload",
                 formData,
                 {
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    },
+
                     onUploadProgress: (progressEvent) => {
 
                         if (progressEvent.total) {
@@ -53,12 +57,18 @@ function FileUpload({ refreshFiles }) {
 
             setUploadProgress(100);
 
-            alert("File uploaded successfully");
+            // Clear selected file
             setFile(null);
             setFileName("");
 
-            refreshFiles();
+            // IMPORTANT:
+            // Wait until backend/database operation is complete
+            await new Promise(resolve => setTimeout(resolve, 500));
 
+            // Reload files from backend
+            await refreshFiles();
+
+            alert("File uploaded successfully");
 
         } catch (error) {
 
@@ -80,10 +90,8 @@ function FileUpload({ refreshFiles }) {
                 setUploadProgress(0);
 
             }, 1000);
-
         }
     };
-
 
     return (
         <div className="file-upload">
