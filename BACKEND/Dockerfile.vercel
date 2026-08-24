@@ -13,8 +13,6 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
-ENV PORT=8080
-
-EXPOSE 8080
+EXPOSE 80
 
 CMD ["/opt/java/openjdk/bin/java", "-jar", "app.jar"]
