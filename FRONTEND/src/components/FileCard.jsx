@@ -791,7 +791,7 @@ function FileCard({
 
             <div
                 className="file-icon"
-                onClick={() => openFile(file.id)}
+                onClick={() => openFile(file)}
             >
                 {icon}
             </div>
@@ -874,7 +874,7 @@ function FileCard({
 
                 <button
                     className="open-btn"
-                    onClick={() => openFile(file.id)}
+                    onClick={() => openFile(file)}
                 >
                     Open
                 </button>
