@@ -16,6 +16,7 @@ import com.minidrive.minigoogledrive.model.SearchResult;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +50,8 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.net.URI;
+import java.io.InputStream;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1973,7 +1976,16 @@ public class FileDataService {
 
                                 System.out.println("OPENING CLOUDINARY URL");
 
-                                return new UrlResource(filePath);
+                                try (InputStream input = URI.create(filePath)
+                                                .toURL()
+                                                .openStream()) {
+                                        return new ByteArrayResource(input.readAllBytes());
+                                } catch (Exception e) {
+                                        throw new RuntimeException(
+                                                        "Could not fetch remote file: "
+                                                                        + e.getMessage(),
+                                                        e);
+                                }
                         }
 
                         // ================================
