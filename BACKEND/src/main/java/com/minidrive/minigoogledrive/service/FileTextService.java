@@ -43,6 +43,17 @@ public class FileTextService {
         public String extractText(FileData fileData) {
 
                 String storedPath = fileData.getFilePath();
+                String fileType = fileData.getFileType();
+
+                boolean textBasedFile = "application/pdf".equalsIgnoreCase(fileType)
+                                || "application/msword".equalsIgnoreCase(fileType)
+                                || "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                                .equalsIgnoreCase(fileType)
+                                || "text/plain".equalsIgnoreCase(fileType);
+
+                if (!textBasedFile) {
+                        return "";
+                }
 
                 if (storedPath != null
                                 && (storedPath.startsWith("http://")
@@ -79,7 +90,10 @@ public class FileTextService {
 
                         } catch (Exception e) {
                                 throw new RuntimeException(
-                                                "Could not download file for text extraction",
+                                                "Could not download file for text extraction: "
+                                                                + (e.getMessage() == null
+                                                                                ? "remote file unavailable"
+                                                                                : e.getMessage()),
                                                 e);
                         } finally {
                                 if (temporaryFile != null) {
@@ -92,8 +106,6 @@ public class FileTextService {
                 }
 
                 String path = fileData.getFilePath();
-                String fileType = fileData.getFileType();
-
                 File file = new File(path);
 
                 // Handle relative paths
