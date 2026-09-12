@@ -61,7 +61,7 @@
 
     transform: translateY(-50%);
 
-    z-index: 50;
+    z-index: 1000;
 }
 
 
@@ -1041,7 +1041,9 @@
 
     align-items: center;
 
-    z-index: 50;
+    z-index: 1000;
+
+    pointer-events: auto;
 }
 
 /* =========================

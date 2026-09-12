@@ -69,45 +69,45 @@ public class CloudinaryService {
                                 throw originalError;
                         }
 
-                        String signedUrl = generateSignedUrl(
-                                        publicId,
-                                        resourceType,
-                                        fileName);
-
                             try {
-                                return fetch(signedUrl);
-                            } catch (IOException signedError) {
-                                String authenticatedUrl = generateAuthenticatedUrl(
-                                        publicId,
-                                        resourceType,
-                                        fileName);
+                                String format = "";
+                                if (fileName != null && fileName.lastIndexOf('.') >= 0) {
+                                        format = fileName.substring(fileName.lastIndexOf('.') + 1);
+                                }
 
-                                return fetch(authenticatedUrl);
+                                String resolvedResourceType = resourceType == null || resourceType.isBlank()
+                                        ? "image"
+                                        : resourceType;
+
+                                try {
+                                    String privateDownloadUrl = cloudinary.privateDownload(
+                                            publicId,
+                                            format,
+                                            ObjectUtils.asMap(
+                                                    "resource_type", resolvedResourceType,
+                                                    "type", "upload",
+                                                    "attachment", false));
+
+                                    return fetch(privateDownloadUrl);
+                                } catch (Exception uploadDownloadError) {
+                                    String authenticatedDownloadUrl = cloudinary.privateDownload(
+                                            publicId,
+                                            format,
+                                            ObjectUtils.asMap(
+                                                    "resource_type", resolvedResourceType,
+                                                    "type", "authenticated",
+                                                    "attachment", false));
+
+                                    return fetch(authenticatedDownloadUrl);
+                                }
+                        } catch (Exception privateDownloadError) {
+                                throw new IOException(
+                                                "Cloudinary private download failed: "
+                                                                + privateDownloadError.getMessage(),
+                                                privateDownloadError);
                             }
                 }
         }
-
-                    private String generateAuthenticatedUrl(
-                            String publicId,
-                            String resourceType,
-                            String fileName) {
-
-                        String format = "";
-
-                        if (fileName != null && fileName.lastIndexOf('.') >= 0) {
-                            format = fileName.substring(fileName.lastIndexOf('.') + 1);
-                        }
-
-                        return cloudinary.url()
-                                .secure(true)
-                                .resourceType(resourceType == null || resourceType.isBlank()
-                                        ? "image"
-                                        : resourceType)
-                                .type("authenticated")
-                                .signed(true)
-                                .format(format)
-                                .generate(publicId);
-                    }
 
         private byte[] fetch(String fileUrl) throws IOException {
                 HttpURLConnection connection =

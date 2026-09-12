@@ -923,7 +923,9 @@ function FileCard({
             >
 
                 <button
+                    type="button"
                     className="menu-btn"
+                    aria-label="Open file actions"
                     onClick={(e) => {
 
                         e.stopPropagation();
