@@ -172,7 +172,17 @@ public class RagService {
                         System.out.println(
                                         "RAG: Creating chunks for first question...");
 
-                        createChunks(fileData);
+                        try {
+                                createChunks(fileData);
+                        } catch (RuntimeException embeddingError) {
+                                System.out.println(
+                                                "RAG embeddings unavailable; using direct file context: "
+                                                                + embeddingError.getMessage());
+
+                                return askWithDirectFileContent(
+                                                fileData,
+                                                question);
+                        }
 
                         chunks = chunkRepository.findByFile(fileData);
                 }
@@ -344,6 +354,28 @@ public class RagService {
                                                 + " ms");
 
                 return answer;
+        }
+
+        private String askWithDirectFileContent(
+                        FileData fileData,
+                        String question) {
+
+                String content = fileTextService.extractText(fileData);
+
+                if (content == null || content.isBlank()) {
+                        return "I could not find readable information in this file.";
+                }
+
+                int maxContentLength = 12000;
+
+                if (content.length() > maxContentLength) {
+                        content = content.substring(0, maxContentLength);
+                }
+
+                return openRouterService.askAboutFile(
+                                question,
+                                fileData.getFileName(),
+                                content);
         }
 
         // =========================================================
