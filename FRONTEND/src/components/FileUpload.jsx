@@ -4,6 +4,8 @@ import "./FileUpload.css";
 
 function FileUpload({ refreshFiles }) {
 
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
     const [file, setFile] = useState(null);
     const [fileName, setFileName] = useState("");
     const [uploading, setUploading] = useState(false);
@@ -14,6 +16,11 @@ function FileUpload({ refreshFiles }) {
 
         if (!file) {
             alert("Please select a file");
+            return;
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            alert("File size cannot exceed 100 MB");
             return;
         }
 
@@ -103,8 +110,18 @@ function FileUpload({ refreshFiles }) {
 
                 <input
                     type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt,.mp3,.wav,.ogg,.m4a,audio/*"
                     onChange={(e) => {
-                        setFile(e.target.files[0]);
+                        const selectedFile = e.target.files[0];
+
+                        if (selectedFile && selectedFile.size > MAX_FILE_SIZE) {
+                            alert("File size cannot exceed 100 MB");
+                            e.target.value = "";
+                            setFile(null);
+                            return;
+                        }
+
+                        setFile(selectedFile);
                         setUploadMessage("");
                     }}
                     hidden

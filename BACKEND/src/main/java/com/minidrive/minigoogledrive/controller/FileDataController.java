@@ -90,13 +90,13 @@ public class FileDataController {
                                                                 "Please select a file"));
                         }
 
-                        if (file.getSize() > 10 * 1024 * 1024) {
+                        if (file.getSize() > 100 * 1024 * 1024) {
 
                                 return ResponseEntity
                                                 .badRequest()
                                                 .body(Map.of(
                                                                 "message",
-                                                                "File size exceeds 10 MB"));
+                                                                "File size exceeds 100 MB"));
                         }
 
                         System.out.println("========== UPLOAD REQUEST ==========");

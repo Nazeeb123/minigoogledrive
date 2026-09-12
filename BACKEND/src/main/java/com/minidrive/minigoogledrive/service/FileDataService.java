@@ -113,8 +113,8 @@ public class FileDataService {
                         Long folderId,
                         String fileName) {
 
-                if (file.getSize() > 10 * 1024 * 1024) {
-                        throw new RuntimeException("File size exceeds 10 MB");
+                if (file.getSize() > 100 * 1024 * 1024) {
+                        throw new RuntimeException("File size exceeds 100 MB");
                 }
 
                 String contentType = file.getContentType();
@@ -126,8 +126,14 @@ public class FileDataService {
                                                 contentType.equals("application/msword") ||
                                                 contentType.equals(
                                                                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-                                                ||
-                                                contentType.equals("text/plain"))) {
+                                                || contentType.equals("text/plain")
+                                                || contentType.equals("audio/mpeg")
+                                                || contentType.equals("audio/mp3")
+                                                || contentType.equals("audio/wav")
+                                                || contentType.equals("audio/x-wav")
+                                                || contentType.equals("audio/ogg")
+                                                || contentType.equals("audio/mp4")
+                                                || contentType.equals("audio/x-m4a"))) {
 
                         throw new RuntimeException("File type is not allowed");
                 }
