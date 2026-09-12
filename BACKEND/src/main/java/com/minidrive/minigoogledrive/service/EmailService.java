@@ -1,32 +1,36 @@
 package com.minidrive.minigoogledrive.service;
 
-import com.resend.Resend;
-import com.resend.services.emails.model.Attachment;
-import com.resend.services.emails.model.CreateEmailOptions;
-import com.resend.services.emails.model.CreateEmailResponse;
-
 import jakarta.mail.MessagingException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Base64;
 
 @Service
 public class EmailService {
 
     private final CloudinaryService cloudinaryService;
-    private final Resend resend;
+    private final HttpClient httpClient;
+
+    @Value("${resend.api.key}")
+    private String resendApiKey;
 
     @Value("${mail.from}")
     private String senderEmail;
 
-    public EmailService(
-            CloudinaryService cloudinaryService,
-            @Value("${resend.api.key}") String resendApiKey) {
+    public EmailService(CloudinaryService cloudinaryService) {
 
         this.cloudinaryService = cloudinaryService;
-        this.resend = new Resend(resendApiKey);
+
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .build();
     }
 
     public void sendFile(
@@ -39,13 +43,17 @@ public class EmailService {
         try {
 
             System.out.println("========== SEND EMAIL START ==========");
+
             System.out.println("Recipient: " + recipientEmail);
             System.out.println("File name: " + fileName);
             System.out.println("Public ID: " + publicId);
             System.out.println("Resource type: " + resourceType);
             System.out.println("Sender: " + senderEmail);
 
-            // 1. Download file from Cloudinary
+            // =====================================================
+            // 1. DOWNLOAD FILE FROM CLOUDINARY
+            // =====================================================
+
             System.out.println("Downloading file from Cloudinary...");
 
             byte[] fileBytes = cloudinaryService.downloadFile(
@@ -57,10 +65,14 @@ public class EmailService {
 
             System.out.println(
                     "Cloudinary download successful. File size: "
-                            + fileBytes.length + " bytes"
+                            + fileBytes.length
+                            + " bytes"
             );
 
-            // 2. Convert file to Base64
+            // =====================================================
+            // 2. CONVERT FILE TO BASE64
+            // =====================================================
+
             String base64File = Base64.getEncoder()
                     .encodeToString(fileBytes);
 
@@ -69,72 +81,182 @@ public class EmailService {
                             + base64File.length()
             );
 
-            // 3. Create attachment
-            Attachment attachment = Attachment.builder()
-                    .fileName(fileName)
-                    .content(base64File)
-                    .build();
+            // =====================================================
+            // 3. ESCAPE JSON VALUES
+            // =====================================================
 
-            System.out.println("Email attachment created.");
+            String safeSender = escapeJson(senderEmail);
+            String safeRecipient = escapeJson(recipientEmail);
+            String safeFileName = escapeJson(fileName);
 
-            // 4. Create email
-            CreateEmailOptions email = CreateEmailOptions.builder()
-                    .from(senderEmail)
-                    .to(recipientEmail)
-                    .subject("File shared with you - Mini Google Drive")
-                    .text(
-                            "Hello,\n\n" +
-                            "A file has been shared with you through Mini Google Drive.\n\n" +
-                            "File: " + fileName + "\n\n" +
-                            "Regards,\n" +
-                            "Mini Google Drive"
+            // =====================================================
+            // 4. CREATE EMAIL TEXT
+            // =====================================================
+
+            String emailText =
+                    "Hello,\n\n"
+                            + "A file has been shared with you through Mini Google Drive.\n\n"
+                            + "File: " + fileName + "\n\n"
+                            + "Regards,\n"
+                            + "Mini Google Drive";
+
+            String safeEmailText = escapeJson(emailText);
+
+            // =====================================================
+            // 5. CREATE RESEND JSON
+            // =====================================================
+
+            String jsonBody =
+                    "{"
+                            + "\"from\":\"" + safeSender + "\","
+                            + "\"to\":[\"" + safeRecipient + "\"],"
+                            + "\"subject\":\"File shared with you - Mini Google Drive\","
+                            + "\"text\":\"" + safeEmailText + "\","
+                            + "\"attachments\":["
+                            + "{"
+                            + "\"filename\":\"" + safeFileName + "\","
+                            + "\"content\":\"" + base64File + "\""
+                            + "}"
+                            + "]"
+                            + "}";
+
+            System.out.println("Resend request created.");
+
+            // =====================================================
+            // 6. CREATE HTTPS REQUEST
+            // =====================================================
+
+            System.out.println("Connecting to Resend...");
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.resend.com/emails"))
+                    .timeout(Duration.ofSeconds(60))
+                    .header(
+                            "Authorization",
+                            "Bearer " + resendApiKey
                     )
-                    .attachments(attachment)
+                    .header(
+                            "Content-Type",
+                            "application/json"
+                    )
+                    .POST(
+                            HttpRequest.BodyPublishers.ofString(jsonBody)
+                    )
                     .build();
 
-            System.out.println("Resend email object created.");
+            // =====================================================
+            // 7. SEND EMAIL
+            // =====================================================
+
             System.out.println("Sending email through Resend...");
 
-            // 5. Send through Resend
-            CreateEmailResponse response = resend.emails().send(email);
+            HttpResponse<String> response = httpClient.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            // =====================================================
+            // 8. PRINT RESEND RESPONSE
+            // =====================================================
 
             System.out.println(
-                    "EMAIL SENT SUCCESSFULLY!"
+                    "Resend HTTP Status: "
+                            + response.statusCode()
             );
 
             System.out.println(
-                    "Resend ID: " + response.getId()
+                    "Resend Response: "
+                            + response.body()
             );
 
-            System.out.println("========== SEND EMAIL END ==========");
+            // =====================================================
+            // 9. CHECK SUCCESS
+            // =====================================================
+
+            if (response.statusCode() >= 200
+                    && response.statusCode() < 300) {
+
+                System.out.println(
+                        "========================================"
+                );
+
+                System.out.println(
+                        "EMAIL SENT SUCCESSFULLY!"
+                );
+
+                System.out.println(
+                        "Recipient: " + recipientEmail
+                );
+
+                System.out.println(
+                        "File: " + fileName
+                );
+
+                System.out.println(
+                        "========================================"
+                );
+
+                return;
+            }
+
+            // =====================================================
+            // 10. RESEND ERROR
+            // =====================================================
+
+            throw new RuntimeException(
+                    "Resend rejected the email. HTTP "
+                            + response.statusCode()
+                            + " - "
+                            + response.body()
+            );
 
         } catch (Exception e) {
 
-            System.err.println("========== SEND EMAIL FAILED ==========");
-            System.err.println("Error type: " + e.getClass().getName());
-            System.err.println("Error message: " + e.getMessage());
+            System.err.println(
+                    "========== SEND EMAIL FAILED =========="
+            );
 
-            if (e.getCause() != null) {
-                System.err.println(
-                        "Cause type: " + e.getCause().getClass().getName()
-                );
+            System.err.println(
+                    "Error type: "
+                            + e.getClass().getName()
+            );
 
-                System.err.println(
-                        "Cause message: " + e.getCause().getMessage()
-                );
-            }
+            System.err.println(
+                    "Error message: "
+                            + e.getMessage()
+            );
 
             e.printStackTrace();
 
-            System.err.println("========== SEND EMAIL FAILED ==========");
+            System.err.println(
+                    "========== SEND EMAIL FAILED =========="
+            );
 
             throw new RuntimeException(
                     "Failed to send email: "
                             + (e.getMessage() == null
-                            ? "unknown email or file error"
+                            ? "Unknown email error"
                             : e.getMessage()),
                     e
             );
         }
+    }
+
+    // =============================================================
+    // JSON ESCAPE METHOD
+    // =============================================================
+
+    private String escapeJson(String value) {
+
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 }
