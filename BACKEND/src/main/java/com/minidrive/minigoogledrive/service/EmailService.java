@@ -2,6 +2,8 @@ package com.minidrive.minigoogledrive.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -12,6 +14,9 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final CloudinaryService cloudinaryService;
+
+        @Value("${spring.mail.username}")
+        private String senderEmail;
 
     public EmailService(
             JavaMailSender mailSender,
@@ -31,7 +36,7 @@ public class EmailService {
 
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
-        helper.setFrom("demo@gmail.com");
+        helper.setFrom(senderEmail);
 
         helper.setTo(recipientEmail);
 
