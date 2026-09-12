@@ -72,6 +72,21 @@ function FileCard({
 
     };
 
+    const getActionError = async (error, fallback) => {
+        if (error.response?.data instanceof Blob) {
+            try {
+                const response = JSON.parse(
+                    await error.response.data.text()
+                );
+                return response.message || fallback;
+            } catch {
+                return fallback;
+            }
+        }
+
+        return error.response?.data?.message || fallback;
+    };
+
     // AI Rename states
     const [showAIRename, setShowAIRename] = useState(false);
     const [aiSuggestedName, setAiSuggestedName] = useState("");
@@ -336,7 +351,7 @@ function FileCard({
             console.log(error);
 
             showPopup(
-                "Delete failed",
+                await getActionError(error, "Delete failed"),
                 "error"
             );
 
@@ -376,6 +391,11 @@ function FileCard({
         catch (error) {
 
             console.log(error);
+
+            showPopup(
+                await getActionError(error, "Rename failed"),
+                "error"
+            );
 
         }
 
@@ -427,7 +447,10 @@ function FileCard({
             );
 
             setAiError(
-                "AI could not generate a filename."
+                await getActionError(
+                    error,
+                    "AI could not generate a filename."
+                )
             );
 
         }
@@ -483,7 +506,10 @@ function FileCard({
             );
 
             setAiError(
-                "Could not rename the file."
+                await getActionError(
+                    error,
+                    "Could not rename the file."
+                )
             );
 
         }
@@ -517,7 +543,7 @@ function FileCard({
             console.log(error);
 
             showPopup(
-                "Failed to remove from recent",
+                await getActionError(error, "Failed to remove from recent"),
                 "error"
             );
 
@@ -556,7 +582,7 @@ function FileCard({
             console.log(error);
 
             showPopup(
-                "Failed to update star",
+                await getActionError(error, "Failed to update star"),
                 "error"
             );
 
@@ -603,7 +629,7 @@ function FileCard({
             console.log(error);
 
             showPopup(
-                "Failed to add file",
+                await getActionError(error, "Failed to add file"),
                 "error"
             );
 
@@ -658,8 +684,10 @@ function FileCard({
             setEmailSending(false);
 
             showPopup(
-                error.response?.data?.message ||
-                "Unable to send email. Please try again.",
+                await getActionError(
+                    error,
+                    "Unable to send email. Please try again."
+                ),
                 "error"
             );
 

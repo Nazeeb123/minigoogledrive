@@ -88,6 +88,8 @@
 
     color: #555;
 
+    margin: 0 !important;
+
     transition:
         background 0.15s ease,
         color 0.15s ease;
@@ -163,6 +165,8 @@
     cursor: pointer;
 
     box-sizing: border-box;
+
+    margin: 0 !important;
 
     transition:
         background 0.12s ease,
