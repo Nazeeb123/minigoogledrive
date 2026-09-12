@@ -67,10 +67,22 @@ function SearchResults({ results = [] }) {
 
             previewWindow.close();
 
-            alert(
-                error.response?.data?.message ||
-                "Cannot open file"
-            );
+            let message = "Cannot open file";
+
+            if (error.response?.data instanceof Blob) {
+                try {
+                    const errorBody = JSON.parse(
+                        await error.response.data.text()
+                    );
+                    message = errorBody.message || message;
+                } catch {
+                    // Keep the generic message when the server response is not JSON.
+                }
+            } else {
+                message = error.response?.data?.message || message;
+            }
+
+            alert(message);
         }
     };
 

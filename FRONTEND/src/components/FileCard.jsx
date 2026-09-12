@@ -268,12 +268,25 @@ function FileCard({
 
             previewWindow.close();
 
+            let message = "File opening failed.";
+
+            if (error.response?.data instanceof Blob) {
+                try {
+                    const errorBody = JSON.parse(
+                        await error.response.data.text()
+                    );
+                    message = errorBody.message || message;
+                } catch {
+                    // Keep the generic message when the server response is not JSON.
+                }
+            }
+
             if (error.response?.status === 403) {
                 alert("❌ File opening denied: You don't have permission.");
             } else if (error.response?.status === 404) {
                 alert("❌ File opening denied: File not found.");
             } else {
-                alert("❌ File opening denied.");
+                alert(`❌ ${message}`);
             }
         }
     };

@@ -464,9 +464,17 @@ public class FileDataController {
 
                 String contentType = fileData.getFileType();
 
+                String fileName = fileData.getFileName() == null
+                                ? ""
+                                : fileData.getFileName().toLowerCase();
+
+                if (fileName.endsWith(".pdf")) {
+                        contentType = "application/pdf";
+                }
+
                 if (contentType == null || contentType.isBlank()) {
 
-                        String name = fileData.getFileName().toLowerCase();
+                        String name = fileName;
 
                         if (name.endsWith(".pdf")) {
                                 contentType = "application/pdf";
