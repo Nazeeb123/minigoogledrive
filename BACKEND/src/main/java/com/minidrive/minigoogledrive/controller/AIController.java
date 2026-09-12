@@ -338,12 +338,32 @@ public class AIController {
                 Long fileId = Long.parseLong(String.valueOf(fileIdValue));
                 FileData fileData = fileDataService.getFileForAI(fileId);
                 String content = fileTextService.extractText(fileData);
-                String suggestedName = openRouterService.suggestFileName(
-                                fileData.getFileName(),
-                                content);
+                String suggestedName;
+
+                if (content == null || content.isBlank()) {
+                        suggestedName = fallbackFileName(fileData.getFileName());
+                } else {
+                        suggestedName = openRouterService.suggestFileName(
+                                        fileData.getFileName(),
+                                        content);
+                }
 
                 Map<String, String> response = new HashMap<>();
                 response.put("suggestedName", suggestedName);
                 return response;
+        }
+
+        private String fallbackFileName(String fileName) {
+                if (fileName == null || fileName.isBlank()) {
+                        return "renamed-file";
+                }
+
+                int extensionIndex = fileName.lastIndexOf('.');
+                String baseName = extensionIndex > 0
+                                ? fileName.substring(0, extensionIndex)
+                                : fileName;
+
+                return baseName.trim().replaceAll("[^a-zA-Z0-9 _-]", "_")
+                                + " renamed";
         }
 }
