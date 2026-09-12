@@ -33,6 +33,13 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/files")
+@CrossOrigin(
+                origins = {
+                                "http://localhost:5173",
+                                "https://minigoogledrive.vercel.app",
+                                "https://minigoogledrive-r6yw.vercel.app"
+                },
+                allowCredentials = "true")
 public class FileDataController {
 
         @Autowired
