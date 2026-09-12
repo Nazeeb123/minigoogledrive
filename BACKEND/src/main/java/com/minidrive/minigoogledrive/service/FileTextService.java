@@ -34,6 +34,12 @@ import java.net.URI;
 @Service
 public class FileTextService {
 
+        private final CloudinaryService cloudinaryService;
+
+        public FileTextService(CloudinaryService cloudinaryService) {
+                this.cloudinaryService = cloudinaryService;
+        }
+
         public String extractText(FileData fileData) {
 
                 String storedPath = fileData.getFilePath();
@@ -56,14 +62,13 @@ public class FileTextService {
                                                 "minidrive-embedding-",
                                                 suffix);
 
-                                try (InputStream input = URI.create(storedPath)
-                                                .toURL()
-                                                .openStream()) {
-                                        Files.copy(
-                                                        input,
-                                                        temporaryFile,
-                                                        StandardCopyOption.REPLACE_EXISTING);
-                                }
+                                Files.write(
+                                                temporaryFile,
+                                                cloudinaryService.downloadFile(
+                                                                storedPath,
+                                                                fileData.getCloudinaryPublicId(),
+                                                                fileData.getCloudinaryResourceType(),
+                                                                fileData.getFileName()));
 
                                 FileData localFile = new FileData();
                                 localFile.setFileName(fileData.getFileName());

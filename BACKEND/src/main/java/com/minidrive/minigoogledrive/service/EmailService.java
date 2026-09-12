@@ -67,7 +67,10 @@ public class EmailService {
         } catch (Exception e) {
 
             throw new RuntimeException(
-                    "Failed to attach Cloudinary file",
+                "Failed to send email: "
+                    + (e.getMessage() == null
+                        ? "unknown email or file error"
+                        : e.getMessage()),
                     e);
         }
     }
