@@ -588,6 +588,11 @@ public class FileDataController {
                 return ResponseEntity.ok(results);
         }
 
+        @GetMapping("/ai/{id}")
+        public ResponseEntity<FileData> getFileForAI(@PathVariable Long id) {
+                return ResponseEntity.ok(fileDataService.getFileForAI(id));
+        }
+
         @PostMapping("/{id}/convert")
         public ResponseEntity<?> convertFile(
                         @PathVariable Long id,

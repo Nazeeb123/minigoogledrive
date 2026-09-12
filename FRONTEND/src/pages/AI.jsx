@@ -141,19 +141,9 @@ function AI() {
                 fileId
             );
 
-            const response = await API.get(
-                "/files/my"
-            );
+            const response = await API.get(`/files/ai/${fileId}`);
 
-            console.log(
-                "📁 My files:",
-                response.data
-            );
-
-            const file = response.data.find(
-                (item) =>
-                    String(item.id) === String(fileId)
-            );
+            const file = response.data;
 
             if (file) {
 
@@ -457,13 +447,24 @@ function AI() {
 
             if (selectedFile) {
 
-                response = await API.post(
-                    "/ai/file-ask",
-                    {
-                        question: text,
-                        fileId: selectedFile.id
-                    }
-                );
+                if (selectedFile.fileType?.startsWith("image/")) {
+                    const formData = new FormData();
+                    formData.append("fileId", selectedFile.id);
+                    formData.append("question", text);
+
+                    response = await API.post(
+                        "/ai/image-ask",
+                        formData
+                    );
+                } else {
+                    response = await API.post(
+                        "/ai/file-ask",
+                        {
+                            question: text,
+                            fileId: selectedFile.id
+                        }
+                    );
+                }
 
             }
 

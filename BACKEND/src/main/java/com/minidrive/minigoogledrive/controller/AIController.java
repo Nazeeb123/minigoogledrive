@@ -2,6 +2,7 @@ package com.minidrive.minigoogledrive.controller;
 
 import com.minidrive.minigoogledrive.model.FileData;
 import com.minidrive.minigoogledrive.service.ChatService;
+import com.minidrive.minigoogledrive.service.CloudinaryService;
 import com.minidrive.minigoogledrive.service.FileDataService;
 import com.minidrive.minigoogledrive.service.FileTextService;
 import com.minidrive.minigoogledrive.service.OpenAIService;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Map;
+import java.nio.file.Path;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/ai")
@@ -25,6 +28,7 @@ public class AIController {
         private final ChatService chatService;
         private final OpenRouterService openRouterService;
         private final RagService ragService;
+        private final CloudinaryService cloudinaryService;
 
         public AIController(
                         OpenAIService openAIService,
@@ -32,7 +36,8 @@ public class AIController {
                         ChatService chatService,
                         OpenRouterService openRouterService,
                         FileTextService fileTextService,
-                        RagService ragService) {
+                        RagService ragService,
+                        CloudinaryService cloudinaryService) {
 
                 this.openAIService = openAIService;
                 this.fileDataService = fileDataService;
@@ -40,6 +45,7 @@ public class AIController {
                 this.openRouterService = openRouterService;
                 this.fileTextService = fileTextService;
                 this.ragService = ragService;
+                this.cloudinaryService = cloudinaryService;
         }
 
         // =========================================================
@@ -257,42 +263,24 @@ public class AIController {
                         // RESOLVE PATH
                         // -------------------------------------------------
 
-                        File file = new File(fileData.getFilePath());
+                        byte[] imageBytes;
+                        String storedPath = fileData.getFilePath();
 
-                        if (!file.isAbsolute()) {
-
-                                file = new File(
-                                                System.getProperty("user.dir"),
-                                                fileData.getFilePath());
+                        if (storedPath.startsWith("http://")
+                                        || storedPath.startsWith("https://")) {
+                                imageBytes = cloudinaryService.downloadFile(
+                                                storedPath,
+                                                fileData.getCloudinaryPublicId(),
+                                                fileData.getCloudinaryResourceType(),
+                                                fileData.getFileName());
+                        } else {
+                                Path imagePath = Path.of(storedPath);
+                                if (!imagePath.isAbsolute()) {
+                                        imagePath = Path.of(System.getProperty("user.dir"))
+                                                        .resolve(imagePath);
+                                }
+                                imageBytes = Files.readAllBytes(imagePath);
                         }
-
-                        System.out.println(
-                                        "IMAGE PATH: "
-                                                        + file.getAbsolutePath());
-
-                        // -------------------------------------------------
-                        // CHECK FILE
-                        // -------------------------------------------------
-
-                        if (!file.exists()) {
-
-                                throw new RuntimeException(
-                                                "Image file does not exist: "
-                                                                + file.getAbsolutePath());
-                        }
-
-                        if (!file.isFile()) {
-
-                                throw new RuntimeException(
-                                                "Selected path is not a file");
-                        }
-
-                        // -------------------------------------------------
-                        // READ IMAGE
-                        // -------------------------------------------------
-
-                        byte[] imageBytes = Files.readAllBytes(
-                                        file.toPath());
 
                         if (imageBytes.length == 0) {
 
@@ -335,5 +323,27 @@ public class AIController {
                                                         + e.getMessage(),
                                         e);
                 }
+        }
+
+        @PostMapping("/rename")
+        public Map<String, String> renameFileWithAI(
+                        @RequestBody Map<String, Object> request) {
+
+                Object fileIdValue = request.get("fileId");
+
+                if (fileIdValue == null) {
+                        throw new RuntimeException("fileId is missing");
+                }
+
+                Long fileId = Long.parseLong(String.valueOf(fileIdValue));
+                FileData fileData = fileDataService.getFileForAI(fileId);
+                String content = fileTextService.extractText(fileData);
+                String suggestedName = openRouterService.suggestFileName(
+                                fileData.getFileName(),
+                                content);
+
+                Map<String, String> response = new HashMap<>();
+                response.put("suggestedName", suggestedName);
+                return response;
         }
 }

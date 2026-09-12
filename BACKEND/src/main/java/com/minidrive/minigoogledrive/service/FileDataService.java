@@ -1089,8 +1089,12 @@ public class FileDataService {
                 FileData fileData = fileDataRepository.findById(fileId)
                                 .orElseThrow(() -> new RuntimeException("File not found"));
 
-                // Only allow the owner for now
-                if (!fileData.getUser().getId().equals(user.getId())) {
+                boolean isOwner = fileData.getUser() != null
+                                && fileData.getUser().getId().equals(user.getId());
+                boolean isShared = fileData.getSharedUsers() != null
+                                && fileData.getSharedUsers().contains(user);
+
+                if (!isOwner && !isShared) {
                         throw new RuntimeException(
                                         "You cannot use this file with AI");
                 }
@@ -1237,17 +1241,16 @@ public class FileDataService {
                         // DOWNLOAD CLOUDINARY FILE
                         // =========================
 
-                        try (var inputStream = new UrlResource(fileUrl)
-                                        .getInputStream()) {
+                        inputPath = tempDirectory.resolve(
+                                        originalFile.getFileName());
 
-                                inputPath = tempDirectory.resolve(
-                                                originalFile.getFileName());
-
-                                Files.copy(
-                                                inputStream,
-                                                inputPath,
-                                                StandardCopyOption.REPLACE_EXISTING);
-                        }
+                        Files.write(
+                                        inputPath,
+                                        cloudinaryService.downloadFile(
+                                                        fileUrl,
+                                                        originalFile.getCloudinaryPublicId(),
+                                                        originalFile.getCloudinaryResourceType(),
+                                                        originalFile.getFileName()));
 
                         // =========================
                         // FILE INFORMATION
@@ -1681,17 +1684,16 @@ public class FileDataService {
                         // DOWNLOAD FROM CLOUDINARY
                         // =========================
 
-                        try (var inputStream = new UrlResource(fileUrl)
-                                        .getInputStream()) {
+                        inputPath = tempDirectory.resolve(
+                                        originalFile.getFileName());
 
-                                inputPath = tempDirectory.resolve(
-                                                originalFile.getFileName());
-
-                                Files.copy(
-                                                inputStream,
-                                                inputPath,
-                                                StandardCopyOption.REPLACE_EXISTING);
-                        }
+                        Files.write(
+                                        inputPath,
+                                        cloudinaryService.downloadFile(
+                                                        fileUrl,
+                                                        originalFile.getCloudinaryPublicId(),
+                                                        originalFile.getCloudinaryResourceType(),
+                                                        originalFile.getFileName()));
 
                         long originalSize = Files.size(inputPath);
 
