@@ -26,6 +26,22 @@ public class CloudinaryService {
                         "folder", "minigoogledrive"));
     }
 
+        public String generateSignedUrl(String publicId, String resourceType) {
+                if (publicId == null || publicId.isBlank()) {
+                        throw new IllegalArgumentException("Cloudinary public ID is missing");
+                }
+
+                String type = resourceType == null || resourceType.isBlank()
+                                ? "image"
+                                : resourceType;
+
+                return cloudinary.url()
+                                .secure(true)
+                                .resourceType(type)
+                                .signed(true)
+                                .generate(publicId);
+        }
+
     // Upload byte[] directly
     public Map uploadBytes(
             byte[] fileBytes,

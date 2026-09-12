@@ -1978,30 +1978,21 @@ public class FileDataService {
                                 System.out.println("OPENING CLOUDINARY URL");
 
                                 try {
-                                        HttpURLConnection connection =
-                                                        (HttpURLConnection) URI.create(filePath)
-                                                                        .toURL()
-                                                                        .openConnection();
+                                        byte[] fileBytes = fetchRemoteFile(filePath);
 
-                                        connection.setConnectTimeout(15000);
-                                        connection.setReadTimeout(30000);
-                                        connection.setRequestMethod("GET");
-
-                                        int status = connection.getResponseCode();
-
-                                        if (status < 200 || status >= 300) {
-                                                throw new RuntimeException(
-                                                                "Remote storage returned HTTP "
-                                                                                + status
-                                                                                + " for the file URL");
-                                        }
-
-                                        try (InputStream input = connection.getInputStream()) {
-                                                return new ByteArrayResource(input.readAllBytes());
-                                        } finally {
-                                                connection.disconnect();
-                                        }
+                                        return new ByteArrayResource(fileBytes);
                                 } catch (Exception e) {
+                                        if (e instanceof RemoteFileException
+                                                        && ((RemoteFileException) e).status == 401
+                                                        && fileData.getCloudinaryPublicId() != null) {
+                                                String signedUrl = cloudinaryService.generateSignedUrl(
+                                                                fileData.getCloudinaryPublicId(),
+                                                                fileData.getCloudinaryResourceType());
+
+                                                return new ByteArrayResource(
+                                                                fetchRemoteFile(signedUrl));
+                                        }
+
                                         throw new RuntimeException(
                                                         "Could not fetch remote file: "
                                                                         + e.getMessage(),
@@ -2035,6 +2026,40 @@ public class FileDataService {
                                                                         ? ""
                                                                         : " (" + reason + ")"),
                                         e);
+                }
+        }
+
+        private byte[] fetchRemoteFile(String fileUrl) throws IOException {
+                HttpURLConnection connection =
+                                (HttpURLConnection) URI.create(fileUrl)
+                                                .toURL()
+                                                .openConnection();
+
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(30000);
+                connection.setRequestMethod("GET");
+
+                int status = connection.getResponseCode();
+
+                if (status < 200 || status >= 300) {
+                        connection.disconnect();
+                        throw new RemoteFileException(status);
+                }
+
+                try (InputStream input = connection.getInputStream()) {
+                        return input.readAllBytes();
+                } finally {
+                        connection.disconnect();
+                }
+        }
+
+        private static final class RemoteFileException extends IOException {
+                private final int status;
+
+                private RemoteFileException(int status) {
+                        super("Remote storage returned HTTP " + status
+                                        + " for the file URL");
+                        this.status = status;
                 }
         }
 
