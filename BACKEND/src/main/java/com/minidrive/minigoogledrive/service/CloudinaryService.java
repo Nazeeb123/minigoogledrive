@@ -22,10 +22,16 @@ public class CloudinaryService {
 
     public Map uploadFile(MultipartFile file) throws IOException {
 
+                String resourceType = "auto";
+
+                if ("application/pdf".equalsIgnoreCase(file.getContentType())) {
+                        resourceType = "raw";
+                }
+
         return cloudinary.uploader().upload(
                 file.getBytes(),
                 ObjectUtils.asMap(
-                        "resource_type", "auto",
+                                                "resource_type", resourceType,
                         "folder", "minigoogledrive"));
     }
 
@@ -90,7 +96,7 @@ public class CloudinaryService {
 
                                     return fetch(privateDownloadUrl);
                                 } catch (Exception uploadDownloadError) {
-                                    String authenticatedDownloadUrl = cloudinary.privateDownload(
+                                        String authenticatedDownloadUrl = cloudinary.privateDownload(
                                             publicId,
                                             format,
                                             ObjectUtils.asMap(
@@ -98,7 +104,19 @@ public class CloudinaryService {
                                                     "type", "authenticated",
                                                     "attachment", false));
 
-                                    return fetch(authenticatedDownloadUrl);
+                                        try {
+                                                return fetch(authenticatedDownloadUrl);
+                                        } catch (Exception authenticatedDownloadError) {
+                                                String privateDownloadUrl = cloudinary.privateDownload(
+                                                                publicId,
+                                                                format,
+                                                                ObjectUtils.asMap(
+                                                                                "resource_type", resolvedResourceType,
+                                                                                "type", "private",
+                                                                                "attachment", false));
+
+                                                return fetch(privateDownloadUrl);
+                                        }
                                 }
                         } catch (Exception privateDownloadError) {
                                 throw new IOException(
