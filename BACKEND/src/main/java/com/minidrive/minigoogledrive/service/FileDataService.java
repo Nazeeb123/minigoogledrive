@@ -51,6 +51,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.net.URI;
+import java.net.HttpURLConnection;
 import java.io.InputStream;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -1976,10 +1977,30 @@ public class FileDataService {
 
                                 System.out.println("OPENING CLOUDINARY URL");
 
-                                try (InputStream input = URI.create(filePath)
-                                                .toURL()
-                                                .openStream()) {
-                                        return new ByteArrayResource(input.readAllBytes());
+                                try {
+                                        HttpURLConnection connection =
+                                                        (HttpURLConnection) URI.create(filePath)
+                                                                        .toURL()
+                                                                        .openConnection();
+
+                                        connection.setConnectTimeout(15000);
+                                        connection.setReadTimeout(30000);
+                                        connection.setRequestMethod("GET");
+
+                                        int status = connection.getResponseCode();
+
+                                        if (status < 200 || status >= 300) {
+                                                throw new RuntimeException(
+                                                                "Remote storage returned HTTP "
+                                                                                + status
+                                                                                + " for the file URL");
+                                        }
+
+                                        try (InputStream input = connection.getInputStream()) {
+                                                return new ByteArrayResource(input.readAllBytes());
+                                        } finally {
+                                                connection.disconnect();
+                                        }
                                 } catch (Exception e) {
                                         throw new RuntimeException(
                                                         "Could not fetch remote file: "
@@ -2006,8 +2027,13 @@ public class FileDataService {
 
                         e.printStackTrace();
 
+                        String reason = e.getMessage();
+
                         throw new RuntimeException(
-                                        "Could not open file: " + fileData.getFileName(),
+                                        "Could not open file: " + fileData.getFileName()
+                                                        + (reason == null || reason.isBlank()
+                                                                        ? ""
+                                                                        : " (" + reason + ")"),
                                         e);
                 }
         }
