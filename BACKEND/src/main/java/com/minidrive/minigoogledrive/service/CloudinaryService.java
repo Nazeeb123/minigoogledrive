@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.util.Map;
 
 @Service
@@ -26,7 +29,11 @@ public class CloudinaryService {
                         "folder", "minigoogledrive"));
     }
 
-        public String generateSignedUrl(String publicId, String resourceType) {
+        public String generateSignedUrl(
+                        String publicId,
+                        String resourceType,
+                        String fileName) {
+
                 if (publicId == null || publicId.isBlank()) {
                         throw new IllegalArgumentException("Cloudinary public ID is missing");
                 }
@@ -35,11 +42,96 @@ public class CloudinaryService {
                                 ? "image"
                                 : resourceType;
 
+                String format = "";
+
+                if (fileName != null && fileName.lastIndexOf('.') >= 0) {
+                        format = fileName.substring(fileName.lastIndexOf('.') + 1);
+                }
+
                 return cloudinary.url()
                                 .secure(true)
                                 .resourceType(type)
                                 .signed(true)
+                                .format(format)
                                 .generate(publicId);
+        }
+
+        public byte[] downloadFile(
+                        String fileUrl,
+                        String publicId,
+                        String resourceType,
+                        String fileName) throws IOException {
+
+                try {
+                        return fetch(fileUrl);
+                } catch (IOException originalError) {
+                        if (publicId == null || publicId.isBlank()) {
+                                throw originalError;
+                        }
+
+                        String signedUrl = generateSignedUrl(
+                                        publicId,
+                                        resourceType,
+                                        fileName);
+
+                            try {
+                                return fetch(signedUrl);
+                            } catch (IOException signedError) {
+                                String authenticatedUrl = generateAuthenticatedUrl(
+                                        publicId,
+                                        resourceType,
+                                        fileName);
+
+                                return fetch(authenticatedUrl);
+                            }
+                }
+        }
+
+                    private String generateAuthenticatedUrl(
+                            String publicId,
+                            String resourceType,
+                            String fileName) {
+
+                        String format = "";
+
+                        if (fileName != null && fileName.lastIndexOf('.') >= 0) {
+                            format = fileName.substring(fileName.lastIndexOf('.') + 1);
+                        }
+
+                        return cloudinary.url()
+                                .secure(true)
+                                .resourceType(resourceType == null || resourceType.isBlank()
+                                        ? "image"
+                                        : resourceType)
+                                .type("authenticated")
+                                .signed(true)
+                                .format(format)
+                                .generate(publicId);
+                    }
+
+        private byte[] fetch(String fileUrl) throws IOException {
+                HttpURLConnection connection =
+                                (HttpURLConnection) URI.create(fileUrl)
+                                                .toURL()
+                                                .openConnection();
+
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(30000);
+                connection.setRequestMethod("GET");
+
+                int status = connection.getResponseCode();
+
+                if (status < 200 || status >= 300) {
+                        connection.disconnect();
+                        throw new IOException(
+                                        "Remote storage returned HTTP " + status);
+                }
+
+                try (InputStream input = connection.getInputStream()) {
+                        return input.readAllBytes();
+                } finally {
+                        connection.disconnect();
+                }
         }
 
     // Upload byte[] directly

@@ -602,6 +602,8 @@ public class FileDataService {
                         emailService.sendFile(
                                         email,
                                         fileUrl,
+                                        fileData.getCloudinaryPublicId(),
+                                        fileData.getCloudinaryResourceType(),
                                         fileData.getFileName());
 
                         return "File sent successfully to " + email;
@@ -1978,21 +1980,13 @@ public class FileDataService {
                                 System.out.println("OPENING CLOUDINARY URL");
 
                                 try {
-                                        byte[] fileBytes = fetchRemoteFile(filePath);
-
-                                        return new ByteArrayResource(fileBytes);
+                                        return new ByteArrayResource(
+                                                        cloudinaryService.downloadFile(
+                                                                        filePath,
+                                                                        fileData.getCloudinaryPublicId(),
+                                                                        fileData.getCloudinaryResourceType(),
+                                                                        fileData.getFileName()));
                                 } catch (Exception e) {
-                                        if (e instanceof RemoteFileException
-                                                        && ((RemoteFileException) e).status == 401
-                                                        && fileData.getCloudinaryPublicId() != null) {
-                                                String signedUrl = cloudinaryService.generateSignedUrl(
-                                                                fileData.getCloudinaryPublicId(),
-                                                                fileData.getCloudinaryResourceType());
-
-                                                return new ByteArrayResource(
-                                                                fetchRemoteFile(signedUrl));
-                                        }
-
                                         throw new RuntimeException(
                                                         "Could not fetch remote file: "
                                                                         + e.getMessage(),

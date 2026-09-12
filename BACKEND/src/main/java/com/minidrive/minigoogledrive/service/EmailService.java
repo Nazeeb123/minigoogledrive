@@ -3,8 +3,6 @@ package com.minidrive.minigoogledrive.service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
-import org.springframework.core.io.UrlResource;
-import org.springframework.core.io.Resource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -13,14 +11,20 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final CloudinaryService cloudinaryService;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailService(
+            JavaMailSender mailSender,
+            CloudinaryService cloudinaryService) {
         this.mailSender = mailSender;
+        this.cloudinaryService = cloudinaryService;
     }
 
     public void sendFile(
             String recipientEmail,
             String fileUrl,
+            String publicId,
+            String resourceType,
             String fileName) throws MessagingException {
 
         MimeMessage message = mailSender.createMimeMessage();
@@ -43,17 +47,15 @@ public class EmailService {
 
         try {
 
-            Resource file = new UrlResource(fileUrl);
-
-            if (!file.exists()) {
-
-                throw new RuntimeException(
-                        "Cloudinary file not found: " + fileUrl);
-            }
+                byte[] fileBytes = cloudinaryService.downloadFile(
+                    fileUrl,
+                    publicId,
+                    resourceType,
+                    fileName);
 
             helper.addAttachment(
                     fileName,
-                    file);
+                    new org.springframework.core.io.ByteArrayResource(fileBytes));
 
             mailSender.send(message);
 
