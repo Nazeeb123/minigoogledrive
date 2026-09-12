@@ -918,4 +918,41 @@ public class OpenRouterService {
                                 .replace("\r", " ")
                                 .trim();
         }
+
+        public String suggestImageFileName(
+                        String originalName,
+                        byte[] imageBytes,
+                        String mimeType) {
+
+                if (imageBytes == null || imageBytes.length == 0) {
+                        throw new RuntimeException("Image data is empty");
+                }
+
+                String base64Image = Base64.getEncoder()
+                                .encodeToString(imageBytes);
+
+                Map<String, Object> textPart = new HashMap<>();
+                textPart.put("type", "text");
+                textPart.put("text",
+                                "Inspect this image and suggest ONE short, descriptive filename "
+                                                + "based on what is visibly shown. Return ONLY the filename "
+                                                + "without extension, quotes, or explanation. Original name: "
+                                                + originalName);
+
+                Map<String, Object> imagePart = new HashMap<>();
+                imagePart.put("type", "image_url");
+                imagePart.put("image_url", Map.of(
+                                "url", "data:" + mimeType + ";base64," + base64Image));
+
+                Map<String, Object> message = new HashMap<>();
+                message.put("role", "user");
+                message.put("content", List.of(textPart, imagePart));
+
+                return sendRequest(List.of(message), VISION_MODEL)
+                                .replace("\"", "")
+                                .replace("'", "")
+                                .replace("\n", " ")
+                                .replace("\r", " ")
+                                .trim();
+        }
 }

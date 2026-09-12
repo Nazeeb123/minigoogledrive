@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Map;
 import java.nio.file.Path;
@@ -337,10 +338,30 @@ public class AIController {
 
                 Long fileId = Long.parseLong(String.valueOf(fileIdValue));
                 FileData fileData = fileDataService.getFileForAI(fileId);
+                String fileType = fileData.getFileType();
                 String content = fileTextService.extractText(fileData);
                 String suggestedName;
 
-                if (content == null || content.isBlank()) {
+                if (fileType != null && fileType.startsWith("image/")) {
+                        byte[] imageBytes;
+
+                        try {
+                                imageBytes = cloudinaryService.downloadFile(
+                                                fileData.getFilePath(),
+                                                fileData.getCloudinaryPublicId(),
+                                                fileData.getCloudinaryResourceType(),
+                                                fileData.getFileName());
+                        } catch (IOException e) {
+                                throw new RuntimeException(
+                                                "Could not download image for AI rename",
+                                                e);
+                        }
+
+                        suggestedName = openRouterService.suggestImageFileName(
+                                        fileData.getFileName(),
+                                        imageBytes,
+                                        fileType);
+                } else if (content == null || content.isBlank()) {
                         suggestedName = fallbackFileName(fileData.getFileName());
                 } else {
                         suggestedName = openRouterService.suggestFileName(
