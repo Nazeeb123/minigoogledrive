@@ -186,6 +186,10 @@ public class FileDataController {
                         @PathVariable Long id,
                         Authentication authentication) {
 
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
+
                 String email = authentication.getName();
 
                 FileData fileData = fileDataRepository.findById(id)
@@ -541,6 +545,7 @@ public class FileDataController {
                                 .orElseThrow(() -> new RuntimeException("File not found"));
 
                 embeddingService.generateEmbedding(fileData);
+                fileDataRepository.save(fileData);
 
                 return ResponseEntity.ok(
                                 "Embedding generated successfully");
@@ -550,6 +555,14 @@ public class FileDataController {
         public ResponseEntity<List<SearchResult>> semanticSearch(
                         @RequestParam String query,
                         Authentication authentication) {
+
+                if (query == null || query.isBlank()) {
+                        return ResponseEntity.ok(List.of());
+                }
+
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
 
                 User user = userRepository
                                 .findByEmail(authentication.getName())

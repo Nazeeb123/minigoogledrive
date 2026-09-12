@@ -38,6 +38,7 @@ function FileCard({
     const [addedToDrive, setAddedToDrive] = useState(false);
     const [showEmailModal, setShowEmailModal] = useState(false);
     const [recipientEmail, setRecipientEmail] = useState("");
+    const [sentRecipientEmail, setSentRecipientEmail] = useState("");
     const [emailSending, setEmailSending] = useState(false);
     const [emailSuccess, setEmailSuccess] = useState(false);
     const [showConvertModal, setShowConvertModal] = useState(false);
@@ -207,6 +208,15 @@ function FileCard({
     // =========================
 
     const openFile = async (file) => {
+        const previewWindow = window.open("", "_blank");
+
+        if (!previewWindow) {
+            alert("Please allow pop-ups to open files.");
+            return;
+        }
+
+        previewWindow.document.title = "Opening file...";
+
         try {
             console.log("OPEN FILE:", file.id);
 
@@ -237,16 +247,15 @@ function FileCard({
 
                 const url = window.URL.createObjectURL(blob);
 
-                window.open(url, "_blank");
-
-                alert("✅ File opened successfully");
+                previewWindow.location.href = url;
 
                 // Release memory after opening
                 setTimeout(() => {
                     window.URL.revokeObjectURL(url);
-                }, 10000);
+                }, 60000);
 
             } else {
+                previewWindow.close();
                 alert("❌ File opening denied");
             }
 
@@ -256,6 +265,8 @@ function FileCard({
                 "OPEN FILE ERROR:",
                 error.response?.data || error
             );
+
+            previewWindow.close();
 
             if (error.response?.status === 403) {
                 alert("❌ File opening denied: You don't have permission.");
@@ -559,6 +570,8 @@ function FileCard({
                     "info"
                 );
 
+                return false;
+
             } else {
 
                 showPopup(
@@ -568,6 +581,8 @@ function FileCard({
 
                 loadFiles &&
                     loadFiles();
+
+                return true;
             }
 
         } catch (error) {
@@ -578,6 +593,8 @@ function FileCard({
                 "Failed to add file",
                 "error"
             );
+
+            return false;
 
         }
 
@@ -612,6 +629,7 @@ function FileCard({
 
             setEmailSending(false);
             setShowEmailModal(false);
+            setSentRecipientEmail(recipientEmail.trim());
 
             setEmailSuccess(true);
 
@@ -665,7 +683,7 @@ function FileCard({
                             <br />
                             has been sent successfully to
                             <br />
-                            <span>{recipientEmail}</span>
+                            <span>{sentRecipientEmail}</span>
                         </p>
 
                         <button
@@ -953,6 +971,21 @@ function FileCard({
 
                             </>
 
+                        ) : isShared ? (
+
+                            <>
+
+                                <button
+                                    onClick={() => {
+                                        handleDelete();
+                                        setMenuOpen(false);
+                                    }}
+                                >
+                                    ✕ Remove from Shared
+                                </button>
+
+                            </>
+
                         ) : (
 
                             <>
@@ -1007,8 +1040,10 @@ function FileCard({
                                         setMenuOpen(false);
 
                                     }}
-                                >
-                                    🗑 Move to Trash
+                                    >
+                                    {isShared
+                                        ? "✕ Remove from Shared"
+                                        : "🗑 Move to Trash"}
                                 </button>
 
 
@@ -1113,8 +1148,10 @@ function FileCard({
                     onClick={async () => {
                         if (addedToDrive) return;
 
-                        await addToMyDrive(file.id);
-                        setAddedToDrive(true);
+                        const added = await addToMyDrive(file.id);
+                        if (added) {
+                            setAddedToDrive(true);
+                        }
                     }}
                     disabled={addedToDrive}
                 >

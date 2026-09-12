@@ -18,13 +18,11 @@ function ShareBox({ shareFile, setShareFile }) {
     const [sending, setSending] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+    const [shareLink, setShareLink] = useState("");
 
     if (!shareFile) {
         return null;
     }
-
-    const link =
-        `http://localhost:5173/shared/${shareFile.id}`;
 
 
     // =========================
@@ -95,6 +93,14 @@ function ShareBox({ shareFile, setShareFile }) {
 
         try {
 
+            const response = await API.post(
+                `/files/${shareFile.id}/share-link`
+            );
+
+            const link = response.data;
+
+            setShareLink(link);
+
             await navigator.clipboard.writeText(link);
 
             setSuccess(true);
@@ -123,8 +129,13 @@ function ShareBox({ shareFile, setShareFile }) {
 
     const shareLinkedIn = () => {
 
+        if (!shareLink) {
+            setError("Copy the link first to generate a share link.");
+            return;
+        }
+
         const linkedInUrl =
-            `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`;
+            `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareLink)}`;
 
         window.open(
             linkedInUrl,

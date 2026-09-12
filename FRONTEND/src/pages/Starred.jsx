@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "../components/SideBar";
 import Navbar from "../components/NavBar";
 import FileCard from "../components/FileCard";
+import ShareBox from "../components/ShareBox";
 import API from "../services/api";
 import "./Dashboard.css";
 import "./Starred.css";
@@ -10,6 +11,7 @@ function Starred() {
 
     const [files, setFiles] = useState([]);
     const [search, setSearch] = useState("");
+    const [shareFile, setShareFile] = useState(null);
 
     const loadStarredFiles = async () => {
 
@@ -79,6 +81,7 @@ function Starred() {
                                 file={file}
                                 isRecent={false}
                                 loadFiles={loadStarredFiles}
+                                setShareFile={setShareFile}
                             />
 
                         ))
@@ -86,6 +89,11 @@ function Starred() {
                     )}
 
                 </div>
+
+                <ShareBox
+                    shareFile={shareFile}
+                    setShareFile={setShareFile}
+                />
 
             </div>
 

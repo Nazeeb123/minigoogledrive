@@ -13,15 +13,16 @@ function SearchResults({ results = [] }) {
     // =====================================================
 
     const openFile = async (id) => {
+        const previewWindow = window.open("", "_blank");
+
+        if (!previewWindow) {
+            alert("Please allow pop-ups to open files.");
+            return;
+        }
+
+        previewWindow.document.title = "Opening file...";
+
         try {
-
-            // Mark as viewed
-            try {
-                await API.get(`/files/mark-viewed/${id}`);
-            } catch (error) {
-                console.log("Mark viewed failed:", error);
-            }
-
             // Open file
             const response = await API.get(
                 `/files/view/${id}`,
@@ -41,7 +42,16 @@ function SearchResults({ results = [] }) {
 
             const url = window.URL.createObjectURL(blob);
 
-            window.open(url, "_blank");
+            previewWindow.location.href = url;
+
+            // Marking as viewed should not prevent the file from opening.
+            API.get(`/files/mark-viewed/${id}`).catch((error) => {
+                console.log("Mark viewed failed:", error);
+            });
+
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+            }, 60000);
 
         } catch (error) {
 
@@ -54,6 +64,8 @@ function SearchResults({ results = [] }) {
                 "SERVER ERROR:",
                 error.response?.data
             );
+
+            previewWindow.close();
 
             alert(
                 error.response?.data?.message ||

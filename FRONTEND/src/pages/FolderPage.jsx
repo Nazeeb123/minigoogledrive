@@ -4,6 +4,7 @@ import API from "../services/api";
 import Navbar from "../components/NavBar";
 import Sidebar from "../components/SideBar";
 import FileCard from "../components/FileCard";
+import ShareBox from "../components/ShareBox";
 import "./Dashboard.css";
 
 function FolderPage() {
@@ -13,6 +14,7 @@ function FolderPage() {
     const navigate = useNavigate();
 
     const [files, setFiles] = useState([]);
+    const [shareFile, setShareFile] = useState(null);
 
     useEffect(() => {
 
@@ -81,6 +83,11 @@ function FolderPage() {
                     ))}
 
                 </div>
+
+                <ShareBox
+                    shareFile={shareFile}
+                    setShareFile={setShareFile}
+                />
 
             </div>
 

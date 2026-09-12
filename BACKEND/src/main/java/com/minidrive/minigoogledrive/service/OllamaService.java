@@ -12,7 +12,10 @@ public class OllamaService {
 
         private final RestTemplate restTemplate = new RestTemplate();
 
-        private static final String OLLAMA_URL = "http://localhost:11434/api/generate";
+        private static final String OLLAMA_BASE_URL = System.getenv()
+                        .getOrDefault("OLLAMA_URL", "http://localhost:11434");
+        private static final String OLLAMA_URL = OLLAMA_BASE_URL + "/api/generate";
+        private static final String OLLAMA_EMBED_URL = OLLAMA_BASE_URL + "/api/embed";
 
         public String askAI(String question) {
 
@@ -85,7 +88,7 @@ public class OllamaService {
                 try {
 
                         ResponseEntity<Map> response = restTemplate.postForEntity(
-                                        "http://localhost:11434/api/embed",
+                                        OLLAMA_EMBED_URL,
                                         entity,
                                         Map.class);
 

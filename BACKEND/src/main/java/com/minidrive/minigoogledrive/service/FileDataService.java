@@ -227,7 +227,13 @@ public class FileDataService {
                         // EMBEDDING
                         // =========================
 
-                        embeddingService.generateEmbedding(savedFile);
+                        try {
+                                embeddingService.generateEmbedding(savedFile);
+                                fileDataRepository.save(savedFile);
+                        } catch (RuntimeException embeddingError) {
+                                System.out.println("Embedding skipped: "
+                                                + embeddingError.getMessage());
+                        }
 
                         return savedFile;
 
@@ -276,7 +282,21 @@ public class FileDataService {
                         fileData.setLastAccessed(LocalDateTime.now());
                         fileDataRepository.save(fileData);
 
-                        return new UrlResource(fileData.getFilePath());
+                        String filePath = fileData.getFilePath();
+
+                        if (filePath.startsWith("http://")
+                                        || filePath.startsWith("https://")) {
+                                return new UrlResource(filePath);
+                        }
+
+                        Path path = resolveFilePath(filePath);
+
+                        if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
+                                throw new RuntimeException(
+                                                "Local file is missing or unreadable: " + path);
+                        }
+
+                        return new FileSystemResource(path);
 
                 } catch (MalformedURLException e) {
 
@@ -1959,11 +1979,11 @@ public class FileDataService {
                         // ================================
                         // OLD LOCAL FILE
                         // ================================
-                        Path path = Paths.get(filePath);
+                        Path path = resolveFilePath(filePath);
 
-                        if (!Files.exists(path)) {
+                        if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
                                 throw new RuntimeException(
-                                                "Local file does not exist: " + filePath);
+                                                "Local file is missing or unreadable: " + path);
                         }
 
                         System.out.println("OPENING LOCAL FILE");

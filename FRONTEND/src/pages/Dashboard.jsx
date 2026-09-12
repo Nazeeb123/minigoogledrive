@@ -199,34 +199,33 @@ function Dashboard() {
             // NORMAL SEARCH
             // =================================================
 
-            const normalResponse =
-                await API.get(
-                    `/files/search?query=${encodeURIComponent(
-                        query
-                    )}`
-                );
+            const [normalResult, semanticResult] =
+                await Promise.allSettled([
+                    API.get(
+                        `/files/search?query=${encodeURIComponent(query)}`
+                    ),
+                    API.get(
+                        `/files/semantic-search?query=${encodeURIComponent(query)}`
+                    )
+                ]);
 
+            const normalResults = normalResult.status === "fulfilled"
+                ? normalResult.value.data
+                : [];
 
-            // =================================================
-            // SEMANTIC SEARCH
-            // =================================================
-
-            const semanticResponse =
-                await API.get(
-                    `/files/semantic-search?query=${encodeURIComponent(
-                        query
-                    )}`
-                );
+            const semanticResults = semanticResult.status === "fulfilled"
+                ? semanticResult.value.data
+                : [];
 
 
             console.log(
                 "NORMAL SEARCH:",
-                normalResponse.data
+                normalResults
             );
 
             console.log(
                 "SEMANTIC SEARCH:",
-                semanticResponse.data
+                semanticResults
             );
 
 
@@ -236,9 +235,9 @@ function Dashboard() {
 
             const combinedResults = [
 
-                ...normalResponse.data,
+                ...normalResults,
 
-                ...semanticResponse.data
+                ...semanticResults
 
             ];
 
@@ -392,12 +391,15 @@ function Dashboard() {
                 );
 
 
-            const url =
-                window.URL.createObjectURL(
-                    new Blob([
-                        response.data
-                    ])
-                );
+            const contentType =
+                response.headers["content-type"] ||
+                "application/octet-stream";
+
+            const url = window.URL.createObjectURL(
+                new Blob([response.data], {
+                    type: contentType
+                })
+            );
 
 
             const link =
@@ -406,7 +408,7 @@ function Dashboard() {
 
             link.href = url;
 
-            link.download = "download";
+            link.download = "downloaded-file";
 
 
             document.body.appendChild(link);
@@ -416,9 +418,9 @@ function Dashboard() {
             link.remove();
 
 
-            window.URL.revokeObjectURL(
-                url
-            );
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+            }, 60000);
 
 
         } catch (error) {
@@ -426,6 +428,11 @@ function Dashboard() {
             console.log(
                 "DOWNLOAD ERROR:",
                 error
+            );
+
+            alert(
+                error.response?.data?.message ||
+                "Could not download file"
             );
 
         }

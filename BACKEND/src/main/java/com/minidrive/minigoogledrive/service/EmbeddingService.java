@@ -1,6 +1,7 @@
 package com.minidrive.minigoogledrive.service;
 
 import com.minidrive.minigoogledrive.model.FileData;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -8,13 +9,16 @@ public class EmbeddingService {
 
     private final FileTextService fileTextService;
     private final OllamaService ollamaService;
+    private final ObjectMapper objectMapper;
 
     public EmbeddingService(
             FileTextService fileTextService,
-            OllamaService ollamaService) {
+            OllamaService ollamaService,
+            ObjectMapper objectMapper) {
 
         this.fileTextService = fileTextService;
         this.ollamaService = ollamaService;
+        this.objectMapper = objectMapper;
     }
 
     // =========================================================
@@ -50,6 +54,14 @@ public class EmbeddingService {
                             + fileData.getFileName());
         }
 
-        return createEmbedding(content);
+        double[] embedding = createEmbedding(content);
+
+        try {
+            fileData.setEmbedding(objectMapper.writeValueAsString(embedding));
+        } catch (Exception e) {
+            throw new RuntimeException("Could not store file embedding", e);
+        }
+
+        return embedding;
     }
 }

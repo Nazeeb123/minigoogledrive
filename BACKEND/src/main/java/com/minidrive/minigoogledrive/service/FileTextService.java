@@ -22,15 +22,69 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.net.URI;
 
 @Service
 public class FileTextService {
 
         public String extractText(FileData fileData) {
+
+                String storedPath = fileData.getFilePath();
+
+                if (storedPath != null
+                                && (storedPath.startsWith("http://")
+                                                || storedPath.startsWith("https://"))) {
+
+                        Path temporaryFile = null;
+
+                        try {
+                                String suffix = fileData.getFileName() != null
+                                                && fileData.getFileName().contains(".")
+                                                                ? fileData.getFileName()
+                                                                                .substring(fileData.getFileName()
+                                                                                                .lastIndexOf("."))
+                                                                : ".tmp";
+
+                                temporaryFile = Files.createTempFile(
+                                                "minidrive-embedding-",
+                                                suffix);
+
+                                try (InputStream input = URI.create(storedPath)
+                                                .toURL()
+                                                .openStream()) {
+                                        Files.copy(
+                                                        input,
+                                                        temporaryFile,
+                                                        StandardCopyOption.REPLACE_EXISTING);
+                                }
+
+                                FileData localFile = new FileData();
+                                localFile.setFileName(fileData.getFileName());
+                                localFile.setFileType(fileData.getFileType());
+                                localFile.setFilePath(temporaryFile.toString());
+
+                                return extractText(localFile);
+
+                        } catch (Exception e) {
+                                throw new RuntimeException(
+                                                "Could not download file for text extraction",
+                                                e);
+                        } finally {
+                                if (temporaryFile != null) {
+                                        try {
+                                                Files.deleteIfExists(temporaryFile);
+                                        } catch (IOException ignored) {
+                                        }
+                                }
+                        }
+                }
 
                 String path = fileData.getFilePath();
                 String fileType = fileData.getFileType();
