@@ -167,3 +167,93 @@
     font-size: 14px;
 
 }
+
+/* =========================
+   SIDEBAR HEADER
+========================= */
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px;
+    margin-bottom: 25px;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+}
+
+
+/* =========================
+   HAMBURGER BUTTON
+========================= */
+
+.sidebar-toggle {
+    background: transparent;
+    border: none;
+    font-size: 21px;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 7px;
+    border-radius: 8px;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+
+/* =========================
+   SIDEBAR COLLAPSED
+========================= */
+
+.sidebar-collapsed {
+    width: 75px !important;
+}
+
+
+/* =========================
+   COLLAPSED HEADER
+========================= */
+
+.sidebar-collapsed .sidebar-header {
+    justify-content: center;
+    padding: 0;
+}
+
+
+/* =========================
+   COLLAPSED MENU ITEMS
+========================= */
+
+.sidebar-collapsed li {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+
+/* =========================
+   HIDE TEXT WHEN COLLAPSED
+========================= */
+
+.sidebar-collapsed li span:not(.shared-badge) {
+    display: none;
+}
+
+
+/* =========================
+   SHARED BADGE
+========================= */
+
+.sidebar-collapsed .shared-badge {
+    position: absolute;
+    top: 2px;
+    right: 10px;
+    font-size: 10px;
+}
