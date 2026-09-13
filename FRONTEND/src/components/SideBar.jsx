@@ -1,33 +1,51 @@
 import "./SideBar.css";
-import { FaFolder, FaStar, FaTrash, FaUsers, FaRobot } from "react-icons/fa";
+import {
+  FaFolder,
+  FaStar,
+  FaTrash,
+  FaUsers,
+  FaRobot,
+  FaBars
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import API from "../services/api";
 
 function Sidebar() {
   const navigate = useNavigate();
+
   const [sharedCount, setSharedCount] = useState(0);
+
   const [storage, setStorage] = useState({
     used: 0,
     limit: 1
   });
 
+  // =========================
+  // SIDEBAR OPEN / CLOSE
+  // =========================
+
+  const [collapsed, setCollapsed] = useState(false);
+
+
+  // =========================
+  // LOAD STORAGE
+  // =========================
 
   const loadStorage = async () => {
-
     try {
 
       const response = await API.get("/files/storage");
+
       console.log("STORAGE RESPONSE:", response.data);
+
       setStorage(response.data);
 
-    }
-    catch (error) {
+    } catch (error) {
 
       console.log("STORAGE ERROR:", error);
 
     }
-
   };
 
 
@@ -36,48 +54,137 @@ function Sidebar() {
     loadStorage();
 
   }, []);
+
+
+  // =========================
+  // LOAD SHARED COUNT
+  // =========================
+
   const loadSharedCount = async () => {
+
     try {
+
       const response = await API.get("/files/shared/count");
+
       setSharedCount(response.data);
+
     } catch (error) {
+
       console.log(error);
+
     }
   };
 
+
   useEffect(() => {
+
     loadSharedCount();
+
     const interval = setInterval(() => {
       loadSharedCount();
     }, 3000);
 
     return () => clearInterval(interval);
+
   }, []);
+
 
   return (
 
-    <div className="sidebar">
+    <div
+      className={`sidebar ${collapsed ? "sidebar-collapsed" : ""
+        }`}
+    >
 
-      <h3>MY DRIVE</h3>
+      {/* =========================
+          SIDEBAR HEADER
+      ========================= */}
+
+      <div className="sidebar-header">
+
+        <button
+          className="sidebar-toggle"
+          onClick={() =>
+            setCollapsed(prev => !prev)
+          }
+          title={
+            collapsed
+              ? "Expand sidebar"
+              : "Collapse sidebar"
+          }
+        >
+          <FaBars />
+        </button>
 
 
-      <li onClick={() => navigate("/dashboard")}>
-        <FaFolder /> My Drive
+        {!collapsed && (
+          <h3>MY DRIVE</h3>
+        )}
+
+      </div>
+
+
+      {/* =========================
+          MY DRIVE
+      ========================= */}
+
+      <li
+        onClick={() => navigate("/dashboard")}
+        title="My Drive"
+      >
+        <FaFolder />
+
+        {!collapsed && (
+          <span>My Drive</span>
+        )}
       </li>
 
 
-      <li onClick={() => navigate("/starred")}>
-        <FaStar /> Starred
+      {/* =========================
+          STARRED
+      ========================= */}
+
+      <li
+        onClick={() => navigate("/starred")}
+        title="Starred"
+      >
+        <FaStar />
+
+        {!collapsed && (
+          <span>Starred</span>
+        )}
       </li>
 
 
-      <li onClick={() => navigate("/trash")}>
-        <FaTrash /> Trash
+      {/* =========================
+          TRASH
+      ========================= */}
+
+      <li
+        onClick={() => navigate("/trash")}
+        title="Trash"
+      >
+        <FaTrash />
+
+        {!collapsed && (
+          <span>Trash</span>
+        )}
       </li>
 
 
-      <li onClick={() => navigate("/shared")}>
-        <FaUsers /> Shared
+      {/* =========================
+          SHARED
+      ========================= */}
+
+      <li
+        onClick={() => navigate("/shared")}
+        title="Shared"
+      >
+        <FaUsers />
+
+        {!collapsed && (
+          <span>Shared</span>
+        )}
 
         {sharedCount > 0 && (
           <span className="shared-badge">
@@ -86,41 +193,62 @@ function Sidebar() {
         )}
 
       </li>
-      <li onClick={() => navigate("/ai")}>
-        🧠 AI Assistant
+
+
+      {/* =========================
+          AI ASSISTANT
+      ========================= */}
+
+      <li
+        onClick={() => navigate("/ai")}
+        title="AI Assistant"
+      >
+        <FaRobot />
+
+        {!collapsed && (
+          <span>AI Assistant</span>
+        )}
+
       </li>
 
 
+      {/* =========================
+          STORAGE BOX
+      ========================= */}
 
-      {/* STORAGE BOX */}
+      {!collapsed && (
 
-      <div className="storage-box">
+        <div className="storage-box">
 
-        <h2>Storage</h2>
+          <h2>Storage</h2>
 
-        <div className="storage-bar">
+          <div className="storage-bar">
 
-          <div
-            className="storage-used"
-            style={{
-              width:
-                `${Math.min(
-                  (storage.used / storage.limit) * 100,
-                  100
-                )}%`
-            }}
-          ></div>
+            <div
+              className="storage-used"
+              style={{
+                width:
+                  `${Math.min(
+                    (storage.used / storage.limit) * 100,
+                    100
+                  )}%`
+              }}
+            ></div>
+
+          </div>
+
+
+          <p>
+
+            {(storage.used / (1024 * 1024)).toFixed(1)} MB /
+
+            {(storage.limit / (1024 * 1024 * 1024)).toFixed(1)} GB
+
+          </p>
 
         </div>
 
-
-        <p>
-          {(storage.used / (1024 * 1024)).toFixed(1)} MB /
-          {(storage.limit / (1024 * 1024 * 1024)).toFixed(1)} GB
-        </p>
-
-
-      </div>
+      )}
 
     </div>
 
