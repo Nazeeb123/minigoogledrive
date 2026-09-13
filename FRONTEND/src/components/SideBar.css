@@ -1,5 +1,5 @@
 .sidebar {
-    width: 240px;
+    width: 220px;
     min-height: 100vh;
     background: white;
     border-right: 1px solid #ddd;
@@ -208,7 +208,7 @@
 ========================= */
 
 .sidebar-collapsed {
-    width: 75px !important;
+    width: 70px !important;
 }
 
 

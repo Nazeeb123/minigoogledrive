@@ -103,28 +103,7 @@ function Sidebar({
           SIDEBAR HEADER
       ========================= */}
 
-      <div className="sidebar-header">
 
-        <button
-          className="sidebar-toggle"
-          onClick={() =>
-            setCollapsed(prev => !prev)
-          }
-          title={
-            collapsed
-              ? "Expand sidebar"
-              : "Collapse sidebar"
-          }
-        >
-          <FaBars />
-        </button>
-
-
-        {!collapsed && (
-          <h3>MY DRIVE</h3>
-        )}
-
-      </div>
 
 
       {/* =========================
@@ -132,26 +111,20 @@ function Sidebar({
       ========================= */}
 
       <div className="sidebar-header">
-
-        {!collapsed && (
-          <h3>MY DRIVE</h3>
-        )}
+        {!collapsed && <h3>MY DRIVE</h3>}
 
         <button
           className="sidebar-toggle"
-          onClick={() =>
-            setCollapsed(prev => !prev)
-          }
-          title={
-            collapsed
-              ? "Expand sidebar"
-              : "Collapse sidebar"
-          }
+          onClick={() => setCollapsed(prev => !prev)}
         >
           <FaBars />
         </button>
-
       </div>
+      
+      <li onClick={() => navigate("/dashboard")}>
+        <FaFolder />
+        <span>My Drive</span>
+      </li>
 
 
       {/* =========================
