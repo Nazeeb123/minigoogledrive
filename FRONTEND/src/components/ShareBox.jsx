@@ -257,32 +257,12 @@ function ShareBox({ shareFile, setShareFile }) {
                     COPY LINK
                 ========================= */}
 
-                <button
-                    className="share-btn link"
-                    onClick={copyLink}
-                >
-
-                    <FaLink />
-
-                    Copy Share Link
-
-                </button>
+                
 
 
                 {/* =========================
                     LINKEDIN
                 ========================= */}
-
-                <button
-                    className="share-btn linkedin"
-                    onClick={shareLinkedIn}
-                >
-
-                    <FaLinkedin />
-
-                    Share on LinkedIn
-
-                </button>
 
 
                 {/* =========================
