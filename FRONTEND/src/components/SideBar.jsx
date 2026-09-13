@@ -111,7 +111,7 @@ function Sidebar({
       ========================= */}
 
       <div className="sidebar-header">
-        {!collapsed && <h3>MY DRIVE</h3>}
+        {!collapsed && <h4>MY DRIVE</h4>}
 
         <button
           className="sidebar-toggle"
@@ -120,7 +120,7 @@ function Sidebar({
           <FaBars />
         </button>
       </div>
-      
+
       <li onClick={() => navigate("/dashboard")}>
         <FaFolder />
         <span>My Drive</span>
