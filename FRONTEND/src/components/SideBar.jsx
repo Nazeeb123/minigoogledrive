@@ -111,14 +111,14 @@ function Sidebar({
       ========================= */}
 
       <div className="sidebar-header">
-        {!collapsed && <h4>MY DRIVE</h4>}
-
         <button
           className="sidebar-toggle"
           onClick={() => setCollapsed(prev => !prev)}
         >
           <FaBars />
         </button>
+
+        {!collapsed && <h3>MY DRIVE</h3>}
       </div>
 
       <li onClick={() => navigate("/dashboard")}>
