@@ -773,6 +773,100 @@ function FileCard({
         }
 
     };
+    // =========================
+    // SEND ACTUAL FILE TO WHATSAPP
+    // =========================
+    const sendFileToWhatsApp = async () => {
+        try {
+            setMenuOpen(false);
+
+            // Check browser support
+            if (!navigator.share || !navigator.canShare) {
+                showPopup(
+                    "File sharing is not supported on this device/browser.",
+                    "error"
+                );
+                return;
+            }
+
+            showPopup("Preparing file for WhatsApp...", "success");
+
+            // Get the ACTUAL file from your backend
+            const response = await API.get(
+                `/files/view/${file.id}`,
+                {
+                    responseType: "blob"
+                }
+            );
+
+            if (
+                response.status !== 200 ||
+                !response.data ||
+                response.data.size === 0
+            ) {
+                showPopup("Unable to prepare the file.", "error");
+                return;
+            }
+
+            // Get correct MIME type
+            const mimeType =
+                response.headers["content-type"] ||
+                file.fileType ||
+                "application/octet-stream";
+
+            // Convert Blob → actual File
+            const actualFile = new File(
+                [response.data],
+                file.fileName,
+                {
+                    type: mimeType
+                }
+            );
+
+            // Check whether this device supports sharing files
+            if (
+                !navigator.canShare({
+                    files: [actualFile]
+                })
+            ) {
+                showPopup(
+                    "This device/browser cannot share this file.",
+                    "error"
+                );
+                return;
+            }
+
+            // Open native sharing system
+            await navigator.share({
+                files: [actualFile]
+            });
+
+            showPopup(
+                "File shared successfully.",
+                "success"
+            );
+
+        } catch (error) {
+
+            // User cancelled the share sheet
+            if (error?.name === "AbortError") {
+                return;
+            }
+
+            console.error(
+                "WHATSAPP FILE SHARE ERROR:",
+                error
+            );
+
+            showPopup(
+                await getActionError(
+                    error,
+                    "Unable to share the file."
+                ),
+                "error"
+            );
+        }
+    };
 
 
 
@@ -1228,6 +1322,15 @@ function FileCard({
                                     }}
                                 >
                                     📧 Send by Email
+                                </button>
+                                {/* SEND BY EMAIL */}
+
+                                {/* SEND ACTUAL FILE TO WHATSAPP */}
+
+                                <button
+                                    onClick={sendFileToWhatsApp}
+                                >
+                                    📱 Send to WhatsApp
                                 </button>
 
                                 {/* STAR */}
