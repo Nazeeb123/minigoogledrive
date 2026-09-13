@@ -11,8 +11,18 @@
     background: #ffffff;
     min-height: 100vh;
     color: #222;
-    min-width: 0;
+
+    margin-left: 220px;
+    width: calc(100% - 220px);
+
     box-sizing: border-box;
+    min-width: 0;
+
+    transition: margin-left 0.25s ease, width 0.25s ease;
+}
+.dashboard.dashboard-expanded {
+    margin-left: 70px;
+    width: calc(100% - 70px);
 }
 
 .dashboard h1 {
