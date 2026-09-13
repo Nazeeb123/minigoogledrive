@@ -178,17 +178,19 @@
 .sidebar-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 0 18px;
+    gap: 8px;
+    padding: 0;
     margin-bottom: 25px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .sidebar-header h3 {
     margin: 0;
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 800;
     color: #2563eb;
-    letter-spacing: 1px;
+    letter-spacing: 0;
     white-space: nowrap;
 }
 
