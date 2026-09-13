@@ -305,6 +305,85 @@ function FileCard({
             }
         }
     };
+    // =========================
+    // DOWNLOAD FILE
+    // =========================
+
+    const downloadFile = async (file) => {
+        try {
+            console.log("DOWNLOAD FILE:", file.id);
+
+            const response = await API.get(
+                `/files/view/${file.id}`,
+                {
+                    responseType: "blob"
+                }
+            );
+
+            if (response.status === 200 && response.data.size > 0) {
+
+                const blob = new Blob(
+                    [response.data],
+                    {
+                        type:
+                            response.headers["content-type"] ||
+                            file.fileType ||
+                            "application/octet-stream"
+                    }
+                );
+
+                const url = window.URL.createObjectURL(blob);
+
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = file.fileName;
+
+                document.body.appendChild(link);
+                link.click();
+
+                document.body.removeChild(link);
+
+                window.URL.revokeObjectURL(url);
+
+                showPopup(
+                    "File downloaded successfully",
+                    "success"
+                );
+
+                setMenuOpen(false);
+
+            } else {
+                showPopup(
+                    "File download failed",
+                    "error"
+                );
+            }
+
+        } catch (error) {
+
+            console.error(
+                "DOWNLOAD FILE ERROR:",
+                error.response?.data || error
+            );
+
+            if (error.response?.status === 403) {
+                showPopup(
+                    "You don't have permission to download this file.",
+                    "error"
+                );
+            } else if (error.response?.status === 404) {
+                showPopup(
+                    "File not found.",
+                    "error"
+                );
+            } else {
+                showPopup(
+                    "File download failed.",
+                    "error"
+                );
+            }
+        }
+    };
 
 
     // =========================
@@ -1054,6 +1133,16 @@ function FileCard({
                                 >
                                     🧠 AI Rename
                                 </button>
+                                {/* DOWNLOAD */}
+
+                                <button
+                                    onClick={() => {
+                                        downloadFile(file);
+                                        setMenuOpen(false);
+                                    }}
+                                >
+                                    ⬇️ Download
+                                </button>
 
 
                                 {/* CLEAR RECENT */}
@@ -1083,7 +1172,7 @@ function FileCard({
                                         setMenuOpen(false);
 
                                     }}
-                                    >
+                                >
                                     {isShared
                                         ? "✕ Remove from Shared"
                                         : "🗑 Move to Trash"}
