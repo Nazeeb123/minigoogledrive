@@ -11,7 +11,10 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import API from "../services/api";
 
-function Sidebar() {
+function Sidebar({
+  collapsed,
+  setCollapsed
+}) {
   const navigate = useNavigate();
 
   const [sharedCount, setSharedCount] = useState(0);
@@ -25,7 +28,7 @@ function Sidebar() {
   // SIDEBAR OPEN / CLOSE
   // =========================
 
-  const [collapsed, setCollapsed] = useState(false);
+
 
 
   // =========================
@@ -128,16 +131,27 @@ function Sidebar() {
           MY DRIVE
       ========================= */}
 
-      <li
-        onClick={() => navigate("/dashboard")}
-        title="My Drive"
-      >
-        <FaFolder />
+      <div className="sidebar-header">
 
         {!collapsed && (
-          <span>My Drive</span>
+          <h3>MY DRIVE</h3>
         )}
-      </li>
+
+        <button
+          className="sidebar-toggle"
+          onClick={() =>
+            setCollapsed(prev => !prev)
+          }
+          title={
+            collapsed
+              ? "Expand sidebar"
+              : "Collapse sidebar"
+          }
+        >
+          <FaBars />
+        </button>
+
+      </div>
 
 
       {/* =========================
@@ -203,12 +217,11 @@ function Sidebar() {
         onClick={() => navigate("/ai")}
         title="AI Assistant"
       >
-        <FaRobot />
+        🧠
 
         {!collapsed && (
           <span>AI Assistant</span>
         )}
-
       </li>
 
 

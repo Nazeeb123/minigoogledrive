@@ -22,6 +22,7 @@ import SearchResults from "../components/SearchResults";
 function Dashboard() {
 
     const [files, setFiles] = useState([]);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     const [search, setSearch] = useState("");
 
@@ -731,14 +732,20 @@ function Dashboard() {
             )}
 
 
-            <Sidebar />
+            <Sidebar
+                collapsed={sidebarCollapsed}
+                setCollapsed={setSidebarCollapsed}
+            />
 
 
             {/* =================================================
                 DASHBOARD
             ================================================= */}
 
-            <div className="dashboard">
+            <div
+                className={`dashboard ${sidebarCollapsed ? "dashboard-expanded" : ""
+                    }`}
+            >
 
 
                 {/* =================================================

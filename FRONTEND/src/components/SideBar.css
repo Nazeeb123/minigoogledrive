@@ -174,7 +174,8 @@
 
 .sidebar-header {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 10px;
     padding: 0 18px;
     margin-bottom: 25px;
@@ -183,11 +184,6 @@
 .sidebar-header h3 {
     margin: 0;
 }
-
-
-/* =========================
-   HAMBURGER BUTTON
-========================= */
 
 .sidebar-toggle {
     background: transparent;
@@ -206,7 +202,6 @@
 .sidebar-toggle:hover {
     background: rgba(0, 0, 0, 0.08);
 }
-
 
 /* =========================
    SIDEBAR COLLAPSED
