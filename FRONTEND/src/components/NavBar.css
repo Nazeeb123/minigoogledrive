@@ -1,5 +1,5 @@
 /* =========================================================
-   NAVBAR
+   NAVBAR - MODERN CLOUD DRIVE STYLE
 ========================================================= */
 
 .navbar {
@@ -7,76 +7,119 @@
     align-items: center;
     justify-content: space-between;
 
-    background: #6a5acd;
-    color: white;
+    width: 100%;
+    min-height: 72px;
+    padding: 12px 22px;
 
-    padding: 12px 24px;
-
-    min-height: 64px;
     box-sizing: border-box;
 
+    background: linear-gradient(
+        135deg,
+        #4f46e5 0%,
+        #6366f1 45%,
+        #7c3aed 100%
+    );
+
+    color: white;
+
     position: relative;
+    z-index: 1000;
+
+    box-shadow:
+        0 4px 18px rgba(0, 0, 0, 0.12);
 }
 
 
 /* =========================================================
-   NAVBAR TITLE
+   TITLE
 ========================================================= */
 
 .navbar h2 {
-    font-size: 22px;
-    font-weight: bold;
-
     margin: 0;
 
-    color: #111;
+    font-size: 22px;
+    font-weight: 800;
 
-    letter-spacing: 0.5px;
+    color: white;
+
+    letter-spacing: 0.3px;
 
     white-space: nowrap;
+
+    text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 
 /* =========================================================
-   SEARCH
+   SEARCH CONTAINER
 ========================================================= */
 
 .search-container {
     flex: 1;
-
-    margin: 0 40px;
 
     position: relative;
 
     display: flex;
     align-items: center;
 
-    background: #fff;
+    height: 46px;
 
-    border-radius: 10px;
+    max-width: 560px;
 
-    border: 1px solid #ccc;
+    margin: 0 45px;
 
-    padding: 0 12px;
-
-    max-width: 520px;
-
-    height: 44px;
+    padding: 0 16px;
 
     box-sizing: border-box;
+
+    background: rgba(255, 255, 255, 0.97);
+
+    border: 1px solid rgba(255, 255, 255, 0.5);
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.10);
+
+    transition:
+        box-shadow 0.25s ease,
+        transform 0.25s ease,
+        border-color 0.25s ease;
 }
 
+
+/* Search focus effect */
+
+.search-container:focus-within {
+    border-color: white;
+
+    box-shadow:
+        0 0 0 4px rgba(255, 255, 255, 0.20),
+        0 6px 18px rgba(0, 0, 0, 0.15);
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   SEARCH ICON
+========================================================= */
 
 .search-icon {
+    flex-shrink: 0;
+
     font-size: 18px;
 
-    color: #888;
+    color: #6366f1;
 
-    margin-right: 8px;
-
-    flex-shrink: 0;
+    margin-right: 11px;
 }
 
+
+/* =========================================================
+   SEARCH INPUT
+========================================================= */
 
 .search-box {
     flex: 1;
@@ -84,19 +127,22 @@
     width: 100%;
 
     border: none;
-
     outline: none;
 
-    padding: 10px 0;
+    background: transparent;
+
+    color: #222;
 
     font-size: 15px;
+    font-weight: 500;
 
-    background: transparent;
+    padding: 10px 0;
 }
 
 
 .search-box::placeholder {
-    color: #aaa;
+    color: #9ca3af;
+    font-weight: 400;
 }
 
 
@@ -109,45 +155,48 @@
 
     align-items: center;
 
-    gap: 12px;
+    gap: 10px;
 
     white-space: nowrap;
 }
 
 
-.navbar-right>span {
-    font-size: 14px;
-
-    color: white;
-}
-
-
 /* =========================================================
-   NORMAL BUTTONS
+   EMAIL / USER
 ========================================================= */
 
-.navbar-right>button {
-    background: #ff4d4d;
+.navbar-right > span {
+    display: flex;
+    align-items: center;
 
-    border: none;
+    max-width: 210px;
 
-    padding: 8px 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
-    border-radius: 6px;
+    padding: 8px 13px;
+
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, 0.14);
+
+    border: 1px solid rgba(255, 255, 255, 0.18);
 
     color: white;
 
-    cursor: pointer;
-
     font-size: 13px;
+    font-weight: 500;
 
-    transition: background 0.2s ease,
+    backdrop-filter: blur(8px);
+
+    transition:
+        background 0.2s ease,
         transform 0.2s ease;
 }
 
 
-.navbar-right>button:hover {
-    background: #e60000;
+.navbar-right > span:hover {
+    background: rgba(255, 255, 255, 0.22);
 
     transform: translateY(-1px);
 }
@@ -170,16 +219,16 @@
 ========================================================= */
 
 .notification-button {
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
 
     padding: 0 !important;
 
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.22);
 
-    border-radius: 7px;
+    border-radius: 11px;
 
-    background: #ff4d4d;
+    background: rgba(255, 255, 255, 0.14);
 
     color: white;
 
@@ -191,18 +240,29 @@
 
     position: relative;
 
-    font-size: 16px;
+    font-size: 17px;
+
+    backdrop-filter: blur(8px);
 
     transition:
         background 0.2s ease,
-        transform 0.2s ease;
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 
 .notification-button:hover {
-    background: #e60000;
+    background: rgba(255, 255, 255, 0.25);
 
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 5px 12px rgba(0, 0, 0, 0.15);
+}
+
+
+.notification-button:active {
+    transform: scale(0.95);
 }
 
 
@@ -216,27 +276,98 @@
     top: -6px;
     right: -6px;
 
-    min-width: 18px;
-    height: 18px;
+    min-width: 19px;
+    height: 19px;
 
-    padding: 0 4px;
+    padding: 0 5px;
 
-    background: #ff1744;
-
-    color: white;
-
-    border-radius: 50%;
-
-    font-size: 10px;
-    font-weight: bold;
+    box-sizing: border-box;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border: 2px solid #6a5acd;
+    background: #ef4444;
 
-    box-sizing: border-box;
+    color: white;
+
+    border: 2px solid #6366f1;
+
+    border-radius: 50%;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    box-shadow:
+        0 2px 6px rgba(239, 68, 68, 0.35);
+
+    animation: notificationPulse 2s infinite;
+}
+
+
+@keyframes notificationPulse {
+
+    0% {
+        box-shadow:
+            0 0 0 0 rgba(239, 68, 68, 0.45);
+    }
+
+    70% {
+        box-shadow:
+            0 0 0 5px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        box-shadow:
+            0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+
+/* =========================================================
+   LOGOUT BUTTON
+========================================================= */
+
+.navbar-right > button {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    padding: 10px 16px;
+
+    border-radius: 10px;
+
+    background: rgba(239, 68, 68, 0.95);
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    box-shadow:
+        0 3px 8px rgba(0, 0, 0, 0.10);
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.navbar-right > button:hover {
+    background: #dc2626;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 5px 12px rgba(0, 0, 0, 0.18);
+}
+
+
+.navbar-right > button:active {
+    transform: scale(0.96);
 }
 
 
@@ -247,27 +378,43 @@
 .notification-dropdown {
     position: absolute;
 
-    top: 46px;
+    top: 52px;
     right: 0;
 
-    width: 370px;
-
-    max-height: 420px;
+    width: 380px;
+    max-height: 440px;
 
     background: white;
 
-    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+
+    border-radius: 16px;
 
     box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.18);
+        0 18px 45px rgba(0, 0, 0, 0.20);
 
     overflow-y: auto;
-
     overflow-x: hidden;
 
     z-index: 10000;
 
     color: #222;
+
+    animation: notificationDrop 0.18s ease-out;
+}
+
+
+@keyframes notificationDrop {
+
+    from {
+        opacity: 0;
+        transform: translateY(-7px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 
@@ -278,18 +425,18 @@
 .notification-dropdown h3 {
     margin: 0;
 
-    padding: 16px;
+    padding: 17px 18px;
 
     font-size: 17px;
+    font-weight: 700;
 
-    color: #222;
+    color: #111827;
 
     background: white;
 
-    border-bottom: 1px solid #eeeeee;
+    border-bottom: 1px solid #eef0f3;
 
     position: sticky;
-
     top: 0;
 
     z-index: 2;
@@ -309,9 +456,9 @@
 
     box-sizing: border-box;
 
-    padding: 12px 10px 12px 14px;
+    padding: 13px 12px 13px 15px;
 
-    border-bottom: 1px solid #eeeeee;
+    border-bottom: 1px solid #f0f0f0;
 
     background: white;
 
@@ -321,7 +468,7 @@
 
 
 .notification-item:hover {
-    background: #f7f9fc;
+    background: #f8faff;
 }
 
 
@@ -334,7 +481,7 @@
 
     align-items: flex-start;
 
-    gap: 10px;
+    gap: 11px;
 
     flex: 1;
 
@@ -345,30 +492,31 @@
 
 
 /* =========================================================
-   BELL ICON 🔔
+   NOTIFICATION ICON
 ========================================================= */
 
 .notification-icon {
-    width: 30px;
+    width: 34px;
+    min-width: 34px;
 
-    min-width: 30px;
-
-    height: 30px;
+    height: 34px;
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
-    font-size: 18px;
+    background: #eef2ff;
+
+    border-radius: 10px;
+
+    font-size: 16px;
 
     flex-shrink: 0;
 }
 
 
 /* =========================================================
-   NOTIFICATION TEXT
+   NOTIFICATION CONTENT
 ========================================================= */
 
 .notification-content {
@@ -385,9 +533,9 @@
 
     font-size: 13px;
 
-    line-height: 1.4;
+    line-height: 1.45;
 
-    color: #333;
+    color: #374151;
 
     word-break: break-word;
 
@@ -396,42 +544,43 @@
 
 
 .notification-content small {
-    color: #999;
+    color: #9ca3af;
 
     font-size: 10px;
 }
 
 
 /* =========================================================
-   UNREAD NOTIFICATION
+   UNREAD
 ========================================================= */
 
 .notification-item.unread {
-    background: #f4f8ff;
+    background: #f3f6ff;
+
+    border-left: 3px solid #6366f1;
 }
 
 
 .notification-item.unread:hover {
-    background: #edf4ff;
+    background: #eaf0ff;
 }
 
 
 /* =========================================================
-   READ NOTIFICATION
+   READ
 ========================================================= */
 
 .notification-item.read {
-    opacity: 0.75;
+    opacity: 0.72;
 }
 
 
 /* =========================================================
-   DELETE BUTTON 🗑
+   DELETE NOTIFICATION
 ========================================================= */
 
 .notification-delete-btn {
     width: 32px;
-
     height: 32px;
 
     min-width: 32px;
@@ -448,17 +597,15 @@
 
     background: transparent;
 
-    color: #777;
+    color: #9ca3af;
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
     cursor: pointer;
 
-    font-size: 15px;
+    font-size: 14px;
 
     opacity: 0;
 
@@ -470,28 +617,22 @@
 }
 
 
-/* Show dustbin when hovering notification */
-
 .notification-item:hover .notification-delete-btn {
     opacity: 1;
 }
 
 
-/* Dustbin hover */
-
 .notification-delete-btn:hover {
-    background: #ffe5e5;
+    background: #fee2e2;
 
-    color: #e53935;
+    color: #dc2626;
 
     transform: scale(1.08);
 }
 
 
-/* Dustbin click */
-
 .notification-delete-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.94);
 }
 
 
@@ -502,11 +643,11 @@
 .no-notifications {
     text-align: center;
 
-    padding: 30px 15px;
+    padding: 38px 15px;
 
     margin: 0;
 
-    color: #888;
+    color: #9ca3af;
 
     font-size: 14px;
 }
@@ -527,14 +668,14 @@
 
 
 .notification-dropdown::-webkit-scrollbar-thumb {
-    background: #ccc;
+    background: #d1d5db;
 
     border-radius: 10px;
 }
 
 
 .notification-dropdown::-webkit-scrollbar-thumb:hover {
-    background: #aaa;
+    background: #9ca3af;
 }
 
 
@@ -550,15 +691,16 @@
     width: 100%;
     height: 100vh;
 
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, 0.97);
 
     display: flex;
 
     justify-content: center;
-
     align-items: center;
 
     z-index: 99999;
+
+    backdrop-filter: blur(5px);
 }
 
 
@@ -568,17 +710,25 @@
 
 .logout-box {
     text-align: center;
+
+    padding: 35px 45px;
+
+    background: white;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 15px 45px rgba(0, 0, 0, 0.15);
 }
 
 
 .logout-spinner {
     width: 48px;
-
     height: 48px;
 
-    border: 4px solid #ddd;
+    border: 4px solid #e5e7eb;
 
-    border-top: 4px solid #6a5acd;
+    border-top: 4px solid #6366f1;
 
     border-radius: 50%;
 
@@ -593,14 +743,14 @@
 
     font-size: 24px;
 
-    color: #222;
+    color: #111827;
 }
 
 
 .logout-box p {
     margin-top: 8px;
 
-    color: #777;
+    color: #6b7280;
 }
 
 
@@ -617,53 +767,132 @@
     to {
         transform: rotate(360deg);
     }
-
 }
 
 
 /* =========================================================
-   RESPONSIVE
+   TABLET
 ========================================================= */
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
 
     .navbar {
-        padding: 10px 16px;
+        padding: 11px 18px;
     }
 
     .navbar h2 {
-        font-size: 18px;
+        font-size: 19px;
     }
 
     .search-container {
-        margin: 0 20px;
+        margin: 0 22px;
 
-        max-width: 400px;
+        max-width: 460px;
     }
 
-    .navbar-right>span {
-        display: none;
+    .navbar-right > span {
+        max-width: 150px;
     }
-
 }
 
 
-@media (max-width: 650px) {
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 750px) {
 
     .navbar {
+        min-height: auto;
+
+        padding: 12px;
+
+        flex-wrap: wrap;
+
         gap: 10px;
     }
 
+
+    .navbar h2 {
+        font-size: 18px;
+
+        order: 1;
+    }
+
+
+    .navbar-right {
+        order: 2;
+
+        margin-left: auto;
+    }
+
+
+    .navbar-right > span {
+        display: none;
+    }
+
+
     .search-container {
-        margin: 0 10px;
+        order: 3;
+
+        flex-basis: 100%;
+
+        width: 100%;
 
         max-width: none;
+
+        margin: 0;
+
+        height: 44px;
     }
+
 
     .notification-dropdown {
-        width: 320px;
+        position: fixed;
 
-        right: -80px;
+        top: 68px;
+
+        right: 10px;
+
+        width: min(380px, calc(100vw - 20px));
+
+        max-height: 70vh;
+    }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 420px) {
+
+    .navbar {
+        padding: 10px;
     }
 
+    .navbar h2 {
+        font-size: 16px;
+    }
+
+    .notification-button {
+        width: 38px;
+        height: 38px;
+    }
+
+    .navbar-right > button {
+        padding: 9px 12px;
+
+        font-size: 12px;
+    }
+
+    .search-container {
+        height: 42px;
+
+        border-radius: 12px;
+    }
+
+    .search-box {
+        font-size: 14px;
+    }
 }
