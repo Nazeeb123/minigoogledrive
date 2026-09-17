@@ -2301,16 +2301,12 @@ public class FileDataService {
                                 System.out.println("OPENING CLOUDINARY URL");
 
                                 try {
-                                        return new ByteArrayResource(
-                                                        cloudinaryService.downloadFile(
-                                                                        filePath,
-                                                                        fileData.getCloudinaryPublicId(),
-                                                                        fileData.getCloudinaryResourceType(),
-                                                                        fileData.getFileName()));
-                                } catch (Exception e) {
+                                        return new UrlResource(filePath);
+
+                                } catch (MalformedURLException e) {
+
                                         throw new RuntimeException(
-                                                        "Could not fetch remote file: "
-                                                                        + e.getMessage(),
+                                                        "Invalid Cloudinary URL",
                                                         e);
                                 }
                         }

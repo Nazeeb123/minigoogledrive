@@ -10,6 +10,9 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Map;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Service
 public class CloudinaryService {
@@ -22,37 +25,75 @@ public class CloudinaryService {
 
         public Map uploadFile(MultipartFile file) throws IOException {
 
+                if (file == null || file.isEmpty()) {
+                        throw new IllegalArgumentException("File cannot be empty");
+                }
+
                 String contentType = file.getContentType();
 
                 String resourceType;
 
-                // PDF and Office/text files → raw
-                if (contentType != null && (contentType.equalsIgnoreCase("application/pdf")
-                                || contentType.equalsIgnoreCase("application/msword")
-                                || contentType.equalsIgnoreCase(
-                                                "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-                                || contentType.equalsIgnoreCase("application/vnd.ms-excel")
-                                || contentType.equalsIgnoreCase(
-                                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                                || contentType.equalsIgnoreCase("application/vnd.ms-powerpoint")
-                                || contentType.equalsIgnoreCase(
-                                                "application/vnd.openxmlformats-officedocument.presentationml.presentation")
-                                || contentType.equalsIgnoreCase("text/plain"))) {
+                // Images → image
+                if (contentType != null
+                                && contentType.toLowerCase().startsWith("image/")) {
 
-                        resourceType = "raw";
+                        resourceType = "image";
 
+                        // Videos and audio → video
+                } else if (contentType != null
+                                && (contentType.toLowerCase().startsWith("video/")
+                                                || contentType.toLowerCase().startsWith("audio/"))) {
+
+                        resourceType = "video";
+
+                        // PDF / Office / text / other files → raw
                 } else {
 
-                        // Images, videos and audio
-                        // Cloudinary automatically determines the correct type
-                        resourceType = "auto";
+                        resourceType = "raw";
                 }
 
-                return cloudinary.uploader().upload(
-                                file.getBytes(),
-                                ObjectUtils.asMap(
-                                                "resource_type", resourceType,
-                                                "folder", "minigoogledrive"));
+                Path tempFile = null;
+
+                try {
+
+                        String originalName = file.getOriginalFilename();
+
+                        String suffix = ".tmp";
+
+                        if (originalName != null) {
+                                int dotIndex = originalName.lastIndexOf(".");
+                                if (dotIndex >= 0) {
+                                        suffix = originalName.substring(dotIndex);
+                                }
+                        }
+
+                        tempFile = Files.createTempFile(
+                                        "minigoogledrive-upload-",
+                                        suffix);
+
+                        // Write upload to disk instead of loading the entire file into RAM
+                        file.transferTo(tempFile.toFile());
+
+                        Map options = ObjectUtils.asMap(
+                                        "resource_type", resourceType,
+                                        "folder", "minigoogledrive");
+
+                        // Chunked upload.
+                        // 10 MB chunks keep memory usage much lower.
+                        return cloudinary.uploader().uploadLarge(
+                                        tempFile.toFile(),
+                                        options,
+                                        10 * 1024 * 1024);
+
+                } finally {
+
+                        if (tempFile != null) {
+                                try {
+                                        Files.deleteIfExists(tempFile);
+                                } catch (IOException ignored) {
+                                }
+                        }
+                }
         }
 
         public String generateSignedUrl(
