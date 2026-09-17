@@ -33,13 +33,11 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/files")
-@CrossOrigin(
-                origins = {
-                                "http://localhost:5173",
-                                "https://minigoogledrive.vercel.app",
-                                "https://minigoogledrive-r6yw.vercel.app"
-                },
-                allowCredentials = "true")
+@CrossOrigin(origins = {
+                "http://localhost:5173",
+                "https://minigoogledrive.vercel.app",
+                "https://minigoogledrive-r6yw.vercel.app"
+}, allowCredentials = "true")
 public class FileDataController {
 
         @Autowired
@@ -97,15 +95,14 @@ public class FileDataController {
                                                                 "Please select a file"));
                         }
 
-                        if (file.getSize() > 100 * 1024 * 1024) {
+                        if (file.getSize() > 200 * 1024 * 1024) {
 
                                 return ResponseEntity
                                                 .badRequest()
                                                 .body(Map.of(
                                                                 "message",
-                                                                "File size exceeds 100 MB"));
+                                                                "File size exceeds 200 MB"));
                         }
-
                         System.out.println("========== UPLOAD REQUEST ==========");
                         System.out.println("USER: " + email);
                         System.out.println("FILE: " + file.getOriginalFilename());
@@ -475,27 +472,103 @@ public class FileDataController {
                                 ? ""
                                 : fileData.getFileName().toLowerCase();
 
+                // =========================
+                // DETERMINE CONTENT TYPE
+                // =========================
+
                 if (fileName.endsWith(".pdf")) {
+
                         contentType = "application/pdf";
+
+                } else if (fileName.endsWith(".png")) {
+
+                        contentType = "image/png";
+
+                } else if (fileName.endsWith(".jpg")
+                                || fileName.endsWith(".jpeg")) {
+
+                        contentType = "image/jpeg";
+
+                } else if (fileName.endsWith(".gif")) {
+
+                        contentType = "image/gif";
+
+                } else if (fileName.endsWith(".webp")) {
+
+                        contentType = "image/webp";
+
+                } else if (fileName.endsWith(".txt")) {
+
+                        contentType = "text/plain";
+
+                } else if (fileName.endsWith(".mp4")) {
+
+                        contentType = "video/mp4";
+
+                } else if (fileName.endsWith(".webm")) {
+
+                        contentType = "video/webm";
+
+                } else if (fileName.endsWith(".mov")) {
+
+                        contentType = "video/quicktime";
+
+                } else if (fileName.endsWith(".avi")) {
+
+                        contentType = "video/x-msvideo";
+
+                } else if (fileName.endsWith(".mkv")) {
+
+                        contentType = "video/x-matroska";
+
+                } else if (fileName.endsWith(".mp3")) {
+
+                        contentType = "audio/mpeg";
+
+                } else if (fileName.endsWith(".wav")) {
+
+                        contentType = "audio/wav";
+
+                } else if (fileName.endsWith(".ogg")) {
+
+                        contentType = "audio/ogg";
+
+                } else if (fileName.endsWith(".m4a")) {
+
+                        contentType = "audio/mp4";
+
+                } else if (fileName.endsWith(".doc")) {
+
+                        contentType = "application/msword";
+
+                } else if (fileName.endsWith(".docx")) {
+
+                        contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+                } else if (fileName.endsWith(".xls")) {
+
+                        contentType = "application/vnd.ms-excel";
+
+                } else if (fileName.endsWith(".xlsx")) {
+
+                        contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                } else if (fileName.endsWith(".ppt")) {
+
+                        contentType = "application/vnd.ms-powerpoint";
+
+                } else if (fileName.endsWith(".pptx")) {
+
+                        contentType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+                } else if (contentType == null || contentType.isBlank()) {
+
+                        contentType = "application/octet-stream";
                 }
 
-                if (contentType == null || contentType.isBlank()) {
-
-                        String name = fileName;
-
-                        if (name.endsWith(".pdf")) {
-                                contentType = "application/pdf";
-                        } else if (name.endsWith(".png")) {
-                                contentType = "image/png";
-                        } else if (name.endsWith(".jpg")
-                                        || name.endsWith(".jpeg")) {
-                                contentType = "image/jpeg";
-                        } else if (name.endsWith(".txt")) {
-                                contentType = "text/plain";
-                        } else {
-                                contentType = "application/octet-stream";
-                        }
-                }
+                // =========================
+                // RETURN FILE
+                // =========================
 
                 return ResponseEntity.ok()
                                 .contentType(MediaType.parseMediaType(contentType))

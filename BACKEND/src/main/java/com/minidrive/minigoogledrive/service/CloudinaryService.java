@@ -14,26 +14,46 @@ import java.util.Map;
 @Service
 public class CloudinaryService {
 
-    private final Cloudinary cloudinary;
+        private final Cloudinary cloudinary;
 
-    public CloudinaryService(Cloudinary cloudinary) {
-        this.cloudinary = cloudinary;
-    }
+        public CloudinaryService(Cloudinary cloudinary) {
+                this.cloudinary = cloudinary;
+        }
 
-    public Map uploadFile(MultipartFile file) throws IOException {
+        public Map uploadFile(MultipartFile file) throws IOException {
 
-                String resourceType = "auto";
+                String contentType = file.getContentType();
 
-                if ("application/pdf".equalsIgnoreCase(file.getContentType())) {
+                String resourceType;
+
+                // PDF and Office/text files → raw
+                if (contentType != null && (contentType.equalsIgnoreCase("application/pdf")
+                                || contentType.equalsIgnoreCase("application/msword")
+                                || contentType.equalsIgnoreCase(
+                                                "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                                || contentType.equalsIgnoreCase("application/vnd.ms-excel")
+                                || contentType.equalsIgnoreCase(
+                                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                                || contentType.equalsIgnoreCase("application/vnd.ms-powerpoint")
+                                || contentType.equalsIgnoreCase(
+                                                "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+                                || contentType.equalsIgnoreCase("text/plain"))) {
+
                         resourceType = "raw";
+
+                } else {
+
+                        // Images, videos and audio
+                        // Cloudinary automatically determines the correct type
+                        resourceType = "auto";
                 }
 
-        return cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
+                return cloudinary.uploader().upload(
+                                file.getBytes(),
+                                ObjectUtils.asMap(
                                                 "resource_type", resourceType,
-                        "folder", "minigoogledrive"));
-    }
+                                                "folder", "minigoogledrive"));
+        }
 
         public String generateSignedUrl(
                         String publicId,
@@ -75,34 +95,34 @@ public class CloudinaryService {
                                 throw originalError;
                         }
 
-                            try {
+                        try {
                                 String format = "";
                                 if (fileName != null && fileName.lastIndexOf('.') >= 0) {
                                         format = fileName.substring(fileName.lastIndexOf('.') + 1);
                                 }
 
                                 String resolvedResourceType = resourceType == null || resourceType.isBlank()
-                                        ? "image"
-                                        : resourceType;
+                                                ? "image"
+                                                : resourceType;
 
                                 try {
-                                    String privateDownloadUrl = cloudinary.privateDownload(
-                                            publicId,
-                                            format,
-                                            ObjectUtils.asMap(
-                                                    "resource_type", resolvedResourceType,
-                                                    "type", "upload",
-                                                    "attachment", false));
+                                        String privateDownloadUrl = cloudinary.privateDownload(
+                                                        publicId,
+                                                        format,
+                                                        ObjectUtils.asMap(
+                                                                        "resource_type", resolvedResourceType,
+                                                                        "type", "upload",
+                                                                        "attachment", false));
 
-                                    return fetch(privateDownloadUrl);
+                                        return fetch(privateDownloadUrl);
                                 } catch (Exception uploadDownloadError) {
                                         String authenticatedDownloadUrl = cloudinary.privateDownload(
-                                            publicId,
-                                            format,
-                                            ObjectUtils.asMap(
-                                                    "resource_type", resolvedResourceType,
-                                                    "type", "authenticated",
-                                                    "attachment", false));
+                                                        publicId,
+                                                        format,
+                                                        ObjectUtils.asMap(
+                                                                        "resource_type", resolvedResourceType,
+                                                                        "type", "authenticated",
+                                                                        "attachment", false));
 
                                         try {
                                                 return fetch(authenticatedDownloadUrl);
@@ -123,15 +143,14 @@ public class CloudinaryService {
                                                 "Cloudinary private download failed: "
                                                                 + privateDownloadError.getMessage(),
                                                 privateDownloadError);
-                            }
+                        }
                 }
         }
 
         private byte[] fetch(String fileUrl) throws IOException {
-                HttpURLConnection connection =
-                                (HttpURLConnection) URI.create(fileUrl)
-                                                .toURL()
-                                                .openConnection();
+                HttpURLConnection connection = (HttpURLConnection) URI.create(fileUrl)
+                                .toURL()
+                                .openConnection();
 
                 connection.setConnectTimeout(15000);
                 connection.setReadTimeout(30000);
@@ -152,28 +171,39 @@ public class CloudinaryService {
                 }
         }
 
-    // Upload byte[] directly
-    public Map uploadBytes(
-            byte[] fileBytes,
-            String fileName) throws IOException {
+        // Upload byte[] directly
+        public Map uploadBytes(
+                        byte[] fileBytes,
+                        String fileName) throws IOException {
 
-        return cloudinary.uploader().upload(
-                fileBytes,
-                ObjectUtils.asMap(
-                        "resource_type", "auto",
-                        "folder", "minigoogledrive",
-                        "use_filename", true,
-                        "unique_filename", true));
-    }
+                String resourceType = "auto";
 
-    public void deleteFile(
-            String publicId,
-            String resourceType) throws IOException {
+                if (fileName != null) {
 
-        cloudinary.uploader().destroy(
-                publicId,
-                ObjectUtils.asMap(
-                        "resource_type",
-                        resourceType));
-    }
+                        String name = fileName.toLowerCase();
+
+                        if (name.endsWith(".pdf")) {
+                                resourceType = "raw";
+                        }
+                }
+
+                return cloudinary.uploader().upload(
+                                fileBytes,
+                                ObjectUtils.asMap(
+                                                "resource_type", resourceType,
+                                                "folder", "minigoogledrive",
+                                                "use_filename", true,
+                                                "unique_filename", true));
+        }
+
+        public void deleteFile(
+                        String publicId,
+                        String resourceType) throws IOException {
+
+                cloudinary.uploader().destroy(
+                                publicId,
+                                ObjectUtils.asMap(
+                                                "resource_type",
+                                                resourceType));
+        }
 }

@@ -21,9 +21,10 @@ function Sidebar({
 
   const [storage, setStorage] = useState({
     used: 0,
-    limit: 1
+    limit: 2 * 1024 * 1024 * 1024,
+    remaining: 2 * 1024 * 1024 * 1024,
+    percentage: 0
   });
-
   // =========================
   // SIDEBAR OPEN / CLOSE
   // =========================
@@ -199,8 +200,8 @@ function Sidebar({
 
 
       {/* =========================
-          STORAGE BOX
-      ========================= */}
+    STORAGE BOX
+========================= */}
 
       {!collapsed && (
 
@@ -213,29 +214,60 @@ function Sidebar({
             <div
               className="storage-used"
               style={{
-                width:
-                  `${Math.min(
-                    (storage.used / storage.limit) * 100,
-                    100
-                  )}%`
+                width: `${Math.min(
+                  storage.percentage ?? 0,
+                  100
+                )}%`
               }}
             ></div>
 
           </div>
 
+          <p>
+            {(storage.used / (1024 * 1024)).toFixed(1)} MB /{" "}
+            {(storage.limit / (1024 * 1024 * 1024)).toFixed(1)} GB
+          </p>
 
           <p>
-
-            {(storage.used / (1024 * 1024)).toFixed(1)} MB /
-
-            {(storage.limit / (1024 * 1024 * 1024)).toFixed(1)} GB
-
+            {storage.percentage?.toFixed(1) ?? "0.0"}% used
           </p>
+
+          <p>
+            {storage.remaining >= 1024 * 1024 * 1024
+              ? `${(
+                storage.remaining /
+                (1024 * 1024 * 1024)
+              ).toFixed(2)} GB remaining`
+              : `${(
+                storage.remaining /
+                (1024 * 1024)
+              ).toFixed(1)} MB remaining`}
+          </p>
+
+          {/* =========================
+        STORAGE WARNING
+    ========================= */}
+
+          {storage.percentage >= 100 && (
+
+            <p className="storage-warning storage-full">
+              Storage is full. Remove files or get Premium.
+            </p>
+
+          )}
+
+          {storage.percentage >= 80 &&
+            storage.percentage < 100 && (
+
+              <p className="storage-warning">
+                Storage is getting full. Remove files or get Premium.
+              </p>
+
+            )}
 
         </div>
 
       )}
-
     </div>
 
   );

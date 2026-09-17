@@ -113,31 +113,96 @@ public class FileDataService {
                         Long folderId,
                         String fileName) {
 
-                if (file.getSize() > 100 * 1024 * 1024) {
-                        throw new RuntimeException("File size exceeds 100 MB");
+                if (file == null || file.isEmpty()) {
+                        throw new RuntimeException("File cannot be empty");
                 }
 
+                if (file.getSize() > 200 * 1024 * 1024) {
+                        throw new RuntimeException("File size exceeds 200 MB");
+                }
+                // =========================
+                // STORAGE LIMIT
+                // =========================
+
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
+
+                long currentStorage = fileDataRepository
+                                .sumFileSizeByUserAndDeletedFalse(user);
+
+                long storageLimit = 2L * 1024 * 1024 * 1024; // 2 GB
+
+                if (currentStorage + file.getSize() > storageLimit) {
+
+                        throw new RuntimeException(
+                                        "Storage limit exceeded. You have "
+                                                        + (storageLimit - currentStorage)
+                                                        + " bytes remaining.");
+                }
                 String contentType = file.getContentType();
 
                 if (contentType == null ||
                                 !(contentType.equals("application/pdf") ||
+
+                                // =========================
+                                // IMAGES
+                                // =========================
                                                 contentType.equals("image/jpeg") ||
                                                 contentType.equals("image/png") ||
+
+                                                // =========================
+                                                // WORD
+                                                // =========================
                                                 contentType.equals("application/msword") ||
                                                 contentType.equals(
                                                                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-                                                || contentType.equals("text/plain")
-                                                || contentType.equals("audio/mpeg")
-                                                || contentType.equals("audio/mp3")
-                                                || contentType.equals("audio/wav")
-                                                || contentType.equals("audio/x-wav")
-                                                || contentType.equals("audio/ogg")
-                                                || contentType.equals("audio/mp4")
-                                                || contentType.equals("audio/x-m4a"))) {
+                                                ||
+
+                                                // =========================
+                                                // EXCEL
+                                                // =========================
+                                                contentType.equals("application/vnd.ms-excel") ||
+                                                contentType.equals(
+                                                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                                                ||
+
+                                                // =========================
+                                                // POWERPOINT
+                                                // =========================
+                                                contentType.equals("application/vnd.ms-powerpoint") ||
+                                                contentType.equals(
+                                                                "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+                                                ||
+
+                                                // =========================
+                                                // TEXT
+                                                // =========================
+                                                contentType.equals("text/plain") ||
+
+                                                // =========================
+                                                // AUDIO
+                                                // =========================
+                                                contentType.equals("audio/mpeg") ||
+                                                contentType.equals("audio/mp3") ||
+                                                contentType.equals("audio/wav") ||
+                                                contentType.equals("audio/x-wav") ||
+                                                contentType.equals("audio/ogg") ||
+                                                contentType.equals("audio/mp4") ||
+                                                contentType.equals("audio/x-m4a") ||
+
+                                                // =========================
+                                                // VIDEO
+                                                // =========================
+                                                contentType.equals("video/mp4") ||
+                                                contentType.equals("video/webm") ||
+                                                contentType.equals("video/quicktime") ||
+                                                contentType.equals("video/x-msvideo") ||
+                                                contentType.equals("video/x-matroska") ||
+                                                contentType.equals("video/mpeg") ||
+                                                contentType.equals("video/ogg"))) {
 
                         throw new RuntimeException("File type is not allowed");
                 }
-
                 try {
 
                         // =========================
@@ -156,14 +221,6 @@ public class FileDataService {
                                 throw new RuntimeException(
                                                 "Cloudinary did not return a file URL");
                         }
-
-                        // =========================
-                        // GET USER
-                        // =========================
-
-                        User user = userRepository
-                                        .findByEmail(email)
-                                        .orElseThrow(() -> new RuntimeException("User not found"));
 
                         // =========================
                         // GET FOLDER
@@ -502,7 +559,17 @@ public class FileDataService {
 
                 FileData fileData = fileDataRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("File not found"));
+                long currentStorage = fileDataRepository
+                                .sumFileSizeByUserAndDeletedFalse(user);
 
+                long storageLimit = 2L * 1024 * 1024 * 1024; // 2 GB
+
+                if (currentStorage + fileData.getFileSize() > storageLimit) {
+                        throw new RuntimeException(
+                                        "Storage limit exceeded. You have "
+                                                        + Math.max(0, storageLimit - currentStorage)
+                                                        + " bytes remaining.");
+                }
                 if (!fileData.getUser().getId().equals(user.getId())) {
                         throw new RuntimeException("You cannot restore this file");
                 }
@@ -782,23 +849,138 @@ public class FileDataService {
                         FileData oldFile = fileDataRepository.findById(fileId)
                                         .orElseThrow(() -> new RuntimeException("File not found"));
 
-                        // Security
+                        // =========================
+                        // SECURITY
+                        // =========================
                         if (!oldFile.getUser().getId().equals(user.getId())) {
                                 throw new RuntimeException(
                                                 "You are not the owner");
                         }
 
+                        // =========================
+                        // EMPTY FILE CHECK
+                        // =========================
                         if (file == null || file.isEmpty()) {
                                 throw new RuntimeException(
                                                 "Uploaded file is empty");
                         }
 
-                        // Save old file as version history
+                        // =========================
+                        // 200 MB FILE LIMIT
+                        // =========================
+                        if (file.getSize() > 200 * 1024 * 1024) {
+                                throw new RuntimeException(
+                                                "File size exceeds 200 MB");
+                        }
+
+                        // =========================
+                        // FILE TYPE VALIDATION
+                        // =========================
+
+                        String contentType = file.getContentType();
+
+                        if (contentType == null ||
+                                        !(contentType.equals("application/pdf") ||
+
+                                        // =========================
+                                        // IMAGES
+                                        // =========================
+                                                        contentType.equals("image/jpeg") ||
+                                                        contentType.equals("image/png") ||
+
+                                                        // =========================
+                                                        // WORD
+                                                        // =========================
+                                                        contentType.equals("application/msword") ||
+                                                        contentType.equals(
+                                                                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                                                        ||
+
+                                                        // =========================
+                                                        // EXCEL
+                                                        // =========================
+                                                        contentType.equals("application/vnd.ms-excel") ||
+                                                        contentType.equals(
+                                                                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                                                        ||
+
+                                                        // =========================
+                                                        // POWERPOINT
+                                                        // =========================
+                                                        contentType.equals("application/vnd.ms-powerpoint") ||
+                                                        contentType.equals(
+                                                                        "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+                                                        ||
+
+                                                        // =========================
+                                                        // TEXT
+                                                        // =========================
+                                                        contentType.equals("text/plain") ||
+
+                                                        // =========================
+                                                        // AUDIO
+                                                        // =========================
+                                                        contentType.equals("audio/mpeg") ||
+                                                        contentType.equals("audio/mp3") ||
+                                                        contentType.equals("audio/wav") ||
+                                                        contentType.equals("audio/x-wav") ||
+                                                        contentType.equals("audio/ogg") ||
+                                                        contentType.equals("audio/mp4") ||
+                                                        contentType.equals("audio/x-m4a") ||
+
+                                                        // =========================
+                                                        // VIDEO
+                                                        // =========================
+                                                        contentType.equals("video/mp4") ||
+                                                        contentType.equals("video/webm") ||
+                                                        contentType.equals("video/quicktime") ||
+                                                        contentType.equals("video/x-msvideo") ||
+                                                        contentType.equals("video/x-matroska") ||
+                                                        contentType.equals("video/mpeg") ||
+                                                        contentType.equals("video/ogg"))) {
+
+                                throw new RuntimeException(
+                                                "File type is not allowed");
+                        }
+
+                        // =========================
+                        // 2 GB STORAGE LIMIT
+                        // =========================
+
+                        long currentStorage = fileDataRepository
+                                        .sumFileSizeByUserAndDeletedFalse(user);
+
+                        long oldFileSize = oldFile.getFileSize();
+
+                        long storageLimit = 2L * 1024 * 1024 * 1024; // 2 GB
+
+                        long newStorage = currentStorage
+                                        - oldFileSize
+                                        + file.getSize();
+
+                        if (newStorage > storageLimit) {
+                                throw new RuntimeException(
+                                                "Storage limit exceeded. You have "
+                                                                + Math.max(
+                                                                                0,
+                                                                                storageLimit
+                                                                                                - (currentStorage
+                                                                                                                - oldFileSize))
+                                                                + " bytes remaining.");
+                        }
+
+                        // =========================
+                        // SAVE OLD FILE AS VERSION HISTORY
+                        // =========================
+
                         FileVersion version = new FileVersion();
 
                         version.setFileName(oldFile.getFileName());
                         version.setFilePath(oldFile.getFilePath());
                         version.setFileSize(oldFile.getFileSize());
+                        version.setFileType(oldFile.getFileType());
+                        version.setCloudinaryPublicId(oldFile.getCloudinaryPublicId());
+                        version.setCloudinaryResourceType(oldFile.getCloudinaryResourceType());
                         version.setCreatedAt(LocalDateTime.now());
 
                         List<FileVersion> versions = fileVersionRepository.findByFileDataId(fileId);
@@ -810,7 +992,10 @@ public class FileDataService {
 
                         fileVersionRepository.save(version);
 
-                        // Upload new version to Cloudinary
+                        // =========================
+                        // UPLOAD NEW VERSION TO CLOUDINARY
+                        // =========================
+
                         Map uploadResult = cloudinaryService.uploadFile(file);
 
                         String secureUrl = (String) uploadResult.get("secure_url");
@@ -826,12 +1011,15 @@ public class FileDataService {
                                                 "Cloudinary did not return a file URL");
                         }
 
-                        // Update current file
+                        // =========================
+                        // UPDATE CURRENT FILE
+                        // =========================
+
                         oldFile.setFilePath(secureUrl);
                         oldFile.setCloudinaryPublicId(publicId);
                         oldFile.setCloudinaryResourceType(resourceType);
                         oldFile.setFileSize(file.getSize());
-                        oldFile.setFileType(file.getContentType());
+                        oldFile.setFileType(contentType);
                         oldFile.setUploadDate(LocalDateTime.now());
 
                         return fileDataRepository.save(oldFile);
@@ -860,10 +1048,41 @@ public class FileDataService {
                 if (!fileData.getUser().getId().equals(user.getId())) {
                         throw new RuntimeException("You are not the owner");
                 }
+                long currentStorage = fileDataRepository
+                                .sumFileSizeByUserAndDeletedFalse(user);
+
+                long storageLimit = 2L * 1024 * 1024 * 1024; // 2 GB
+
+                long newStorage = currentStorage
+                                - fileData.getFileSize()
+                                + version.getFileSize();
+
+                if (newStorage > storageLimit) {
+                        throw new RuntimeException(
+                                        "Storage limit exceeded. You have "
+                                                        + Math.max(0, storageLimit - currentStorage
+                                                                        + fileData.getFileSize())
+                                                        + " bytes remaining.");
+                }
+
+                // =========================
+                // RESTORE VERSION DATA
+                // =========================
 
                 fileData.setFilePath(version.getFilePath());
                 fileData.setFileSize(version.getFileSize());
                 fileData.setFileName(version.getFileName());
+                fileData.setFileType(version.getFileType());
+
+                // =========================
+                // RESTORE CLOUDINARY DATA
+                // =========================
+
+                fileData.setCloudinaryPublicId(
+                                version.getCloudinaryPublicId());
+
+                fileData.setCloudinaryResourceType(
+                                version.getCloudinaryResourceType());
 
                 fileData.setUploadDate(LocalDateTime.now());
 
@@ -1007,7 +1226,7 @@ public class FileDataService {
                                 .mapToLong(FileData::getFileSize)
                                 .sum();
 
-                long limit = 1024L * 1024 * 1024; // 1GB
+                long limit = 2L * 1024L * 1024 * 1024; // 2GB
 
                 return new StorageResponse(
                                 used,
@@ -1017,22 +1236,24 @@ public class FileDataService {
 
         public Map<String, Object> getStorageUsage(User user) {
 
-                List<FileData> files = fileDataRepository.findByUserAndDeletedFalse(user);
+                long usedStorage = fileDataRepository
+                                .sumFileSizeByUserAndDeletedFalse(user);
 
-                long usedStorage = 0;
+                long storageLimit = 2L * 1024 * 1024 * 1024; // 2 GB
 
-                for (FileData file : files) {
-                        usedStorage += file.getFileSize();
-                }
+                long remainingStorage = Math.max(
+                                0,
+                                storageLimit - usedStorage);
 
-                long storageLimit = 1024L * 1024 * 1024; // 1 GB
+                double percentage = storageLimit > 0
+                                ? ((double) usedStorage / storageLimit) * 100
+                                : 0;
 
-                Map<String, Object> result = new HashMap<>();
-
-                result.put("used", usedStorage);
-                result.put("limit", storageLimit);
-
-                return result;
+                return Map.of(
+                                "used", usedStorage,
+                                "limit", storageLimit,
+                                "remaining", remainingStorage,
+                                "percentage", Math.min(percentage, 100.0));
         }
 
         public String addToMyDrive(Long id) {
@@ -1065,6 +1286,12 @@ public class FileDataService {
                 copy.setFilePath(original.getFilePath());
                 copy.setFileType(original.getFileType());
                 copy.setFileSize(original.getFileSize());
+
+                copy.setCloudinaryPublicId(
+                                original.getCloudinaryPublicId());
+
+                copy.setCloudinaryResourceType(
+                                original.getCloudinaryResourceType());
 
                 copy.setUploadDate(LocalDateTime.now());
 
@@ -1160,6 +1387,11 @@ public class FileDataService {
                 trashFile.setFilePath(original.getFilePath());
                 trashFile.setFileType(original.getFileType());
                 trashFile.setFileSize(original.getFileSize());
+                trashFile.setCloudinaryPublicId(
+                                original.getCloudinaryPublicId());
+
+                trashFile.setCloudinaryResourceType(
+                                original.getCloudinaryResourceType());
 
                 trashFile.setUploadDate(LocalDateTime.now());
 
@@ -1719,54 +1951,135 @@ public class FileDataService {
                         if (!(extension.equals("jpg") ||
                                         extension.equals("jpeg") ||
                                         extension.equals("png") ||
-                                        extension.equals("webp"))) {
+                                        extension.equals("pdf"))) {
 
                                 throw new RuntimeException(
-                                                "Currently only JPG, JPEG, PNG and WEBP files can be compressed");
+                                                "Compression is not supported for this file type: ."
+                                                                + extension);
                         }
 
                         // =========================
-                        // READ IMAGE
+                        // ORIGINAL FILE NAME
                         // =========================
-
-                        BufferedImage image = ImageIO.read(inputPath.toFile());
-
-                        if (image == null) {
-
-                                throw new RuntimeException(
-                                                "Unable to read image");
-                        }
 
                         String originalName = originalFile.getFileName();
 
                         int dotIndex = originalName.lastIndexOf(".");
 
                         String baseName = dotIndex > 0
-                                        ? originalName.substring(
-                                                        0,
-                                                        dotIndex)
+                                        ? originalName.substring(0, dotIndex)
                                         : originalName;
 
                         outputPath = tempDirectory.resolve(
-                                        baseName +
-                                                        "_compressed." +
-                                                        extension);
+                                        baseName + "_compressed." + extension);
+
+                        // =====================================================
+                        // IMAGE COMPRESSION
+                        // =====================================================
+
+                        if (extension.equals("jpg") ||
+                                        extension.equals("jpeg") ||
+                                        extension.equals("png")) {
+
+                                // =========================
+                                // READ IMAGE
+                                // =========================
+
+                                BufferedImage image = ImageIO.read(
+                                                inputPath.toFile());
+
+                                if (image == null) {
+
+                                        throw new RuntimeException(
+                                                        "Unable to read image");
+                                }
+
+                                // =========================
+                                // COMPRESS IMAGE
+                                // =========================
+
+                                compressImageToTarget(
+                                                image,
+                                                outputPath,
+                                                extension,
+                                                targetSize);
+                        }
+
+                        // =====================================================
+                        // PDF COMPRESSION
+                        // =====================================================
+
+                        else if (extension.equals("pdf")) {
+
+                                try (PDDocument document = Loader.loadPDF(
+                                                inputPath.toFile())) {
+
+                                        document.save(
+                                                        outputPath.toFile());
+                                }
+
+                                if (!Files.exists(outputPath)) {
+
+                                        throw new RuntimeException(
+                                                        "Compressed PDF was not created");
+                                }
+
+                                long pdfCompressedSize = Files.size(outputPath);
+
+                                if (pdfCompressedSize >= originalSize) {
+
+                                        throw new RuntimeException(
+                                                        "PDF could not be reduced in size");
+                                }
+
+                                if (pdfCompressedSize > targetSize) {
+
+                                        throw new RuntimeException(
+                                                        "PDF was reduced to "
+                                                                        + pdfCompressedSize
+                                                                        + " bytes, but the requested target was "
+                                                                        + targetSize
+                                                                        + " bytes");
+                                }
+                        }
 
                         // =========================
-                        // COMPRESS
+                        // VERIFY OUTPUT
                         // =========================
-
-                        compressImageToTarget(
-                                        image,
-                                        outputPath,
-                                        extension,
-                                        targetSize);
 
                         if (!Files.exists(outputPath)) {
 
                                 throw new RuntimeException(
                                                 "Compressed file was not created");
                         }
+
+                        long compressedSize = Files.size(outputPath);
+
+                        if (compressedSize >= originalSize) {
+
+                                throw new RuntimeException(
+                                                "Compression did not reduce the file size");
+                        }
+
+                        // =========================
+                        // 2 GB STORAGE LIMIT
+                        // =========================
+
+                        long currentStorage = fileDataRepository
+                                        .sumFileSizeByUserAndDeletedFalse(user);
+
+                        long storageLimit = 2L * 1024 * 1024 * 1024; // 2 GB
+
+                        if (currentStorage + compressedSize > storageLimit) {
+
+                                throw new RuntimeException(
+                                                "Storage limit exceeded. You have "
+                                                                + Math.max(
+                                                                                0,
+                                                                                storageLimit - currentStorage)
+                                                                + " bytes remaining.");
+                        }
+                        ;
 
                         // =========================
                         // UPLOAD TO CLOUDINARY
@@ -1808,7 +2121,7 @@ public class FileDataService {
                                         resourceType);
 
                         compressedFile.setFileSize(
-                                        Files.size(outputPath));
+                                        compressedSize);
 
                         compressedFile.setUploadDate(
                                         LocalDateTime.now());
@@ -1832,8 +2145,8 @@ public class FileDataService {
                         e.printStackTrace();
 
                         throw new RuntimeException(
-                                        "File compression failed: " +
-                                                        e.getMessage(),
+                                        "File compression failed: "
+                                                        + e.getMessage(),
                                         e);
 
                 } finally {
@@ -2032,10 +2345,9 @@ public class FileDataService {
         }
 
         private byte[] fetchRemoteFile(String fileUrl) throws IOException {
-                HttpURLConnection connection =
-                                (HttpURLConnection) URI.create(fileUrl)
-                                                .toURL()
-                                                .openConnection();
+                HttpURLConnection connection = (HttpURLConnection) URI.create(fileUrl)
+                                .toURL()
+                                .openConnection();
 
                 connection.setConnectTimeout(15000);
                 connection.setReadTimeout(30000);
