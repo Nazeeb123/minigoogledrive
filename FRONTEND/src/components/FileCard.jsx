@@ -234,6 +234,26 @@ function FileCard({
 
         try {
             console.log("OPEN FILE:", file.id);
+            const videoExtensions = [
+                "mp4",
+                "webm",
+                "mov",
+                "avi",
+                "mkv",
+                "mpeg"
+            ];
+
+            if (
+                videoExtensions.includes(extension) &&
+                file.filePath &&
+                (
+                    file.filePath.startsWith("https://") ||
+                    file.filePath.startsWith("http://")
+                )
+            ) {
+                previewWindow.location.href = file.filePath;
+                return;
+            }
 
             const response = await API.get(
                 `/files/view/${file.id}`,
