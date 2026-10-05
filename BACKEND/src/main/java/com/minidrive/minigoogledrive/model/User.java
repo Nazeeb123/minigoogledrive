@@ -2,6 +2,7 @@ package com.minidrive.minigoogledrive.model;
 
 import jakarta.persistence.*;
 import java.util.List;
+import java.time.LocalDateTime;
 import jakarta.persistence.Column;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -20,6 +21,11 @@ public class User {
     private String email;
 
     private String password;
+
+    @Column(length = 100)
+    private String passwordResetToken;
+
+    private LocalDateTime passwordResetTokenExpiresAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
@@ -58,6 +64,22 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getPasswordResetToken() {
+        return passwordResetToken;
+    }
+
+    public void setPasswordResetToken(String passwordResetToken) {
+        this.passwordResetToken = passwordResetToken;
+    }
+
+    public LocalDateTime getPasswordResetTokenExpiresAt() {
+        return passwordResetTokenExpiresAt;
+    }
+
+    public void setPasswordResetTokenExpiresAt(LocalDateTime passwordResetTokenExpiresAt) {
+        this.passwordResetTokenExpiresAt = passwordResetTokenExpiresAt;
     }
 
     public List<FileData> getFiles() {

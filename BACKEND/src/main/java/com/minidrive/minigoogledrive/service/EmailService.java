@@ -242,6 +242,35 @@ public class EmailService {
         }
     }
 
+    public void sendPasswordResetEmail(String recipientEmail, String resetUrl) {
+        try {
+            String jsonBody = "{"
+                    + "\"from\":\"" + escapeJson(senderEmail) + "\","
+                    + "\"to\":[\"" + escapeJson(recipientEmail) + "\"],"
+                    + "\"subject\":\"Reset your Mini Google Drive password\","
+                    + "\"text\":\"" + escapeJson(
+                            "We received a request to reset your Mini Google Drive password.\n\n"
+                                    + "Use this link within 30 minutes:\n" + resetUrl
+                                    + "\n\nIf you did not request this, you can ignore this email.") + "\""
+                    + "}";
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.resend.com/emails"))
+                    .timeout(Duration.ofSeconds(60))
+                    .header("Authorization", "Bearer " + resendApiKey)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new RuntimeException("Unable to send reset email.");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to send reset email.");
+        }
+    }
+
     // =============================================================
     // JSON ESCAPE METHOD
     // =============================================================

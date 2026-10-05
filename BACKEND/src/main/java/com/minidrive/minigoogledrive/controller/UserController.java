@@ -29,6 +29,18 @@ public class UserController {
                 loginRequest.getPassword());
     }
 
+    @PostMapping("/forgot-password")
+    public java.util.Map<String, String> forgotPassword(@RequestBody java.util.Map<String, String> request) {
+        userService.requestPasswordReset(request.get("email"));
+        return java.util.Map.of("message", "If an account exists, a reset link has been sent.");
+    }
+
+    @PostMapping("/reset-password")
+    public java.util.Map<String, String> resetPassword(@RequestBody java.util.Map<String, String> request) {
+        userService.resetPassword(request.get("token"), request.get("password"));
+        return java.util.Map.of("message", "Your password has been updated. Please sign in.");
+    }
+
     @PostMapping("/google-login")
     public String googleLogin(@RequestBody java.util.Map<String, String> request) {
 

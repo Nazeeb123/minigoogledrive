@@ -13,6 +13,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.time.LocalDateTime;
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class UserService {
@@ -20,15 +23,21 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final EmailService emailService;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService) {
+            JwtService jwtService,
+            EmailService emailService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.emailService = emailService;
     }
 
 
@@ -37,38 +46,61 @@ public class UserService {
     // ==============================
 
     public User registerUser(User user) {
-
-        user.setPassword(
-                passwordEncoder.encode(user.getPassword())
-        );
-
-        String password = user.getPassword();
-
-        if (password.length() < 8) {
-            throw new RuntimeException(
-                    "Password must be at least 8 characters long"
-            );
+        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+            throw new RuntimeException("Username is required");
         }
-
-        if (!password.matches(".*[A-Z].*")) {
-            throw new RuntimeException(
-                    "Password must contain at least one uppercase letter"
-            );
+        validateGmail(user.getEmail());
+        validatePassword(user.getPassword());
+        if (userRepository.findByEmail(user.getEmail().trim().toLowerCase()).isPresent()) {
+            throw new RuntimeException("An account already exists for this email");
         }
-
-        if (!password.matches(".*[a-z].*")) {
-            throw new RuntimeException(
-                    "Password must contain at least one lowercase letter"
-            );
-        }
-
-        if (!password.matches(".*\\d.*")) {
-            throw new RuntimeException(
-                    "Password must contain at least one number"
-            );
-        }
+        user.setEmail(user.getEmail().trim().toLowerCase());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         return userRepository.save(user);
+    }
+
+    public void requestPasswordReset(String email) {
+        validateGmail(email);
+        userRepository.findByEmail(email.trim().toLowerCase()).ifPresent(user -> {
+            String token = UUID.randomUUID().toString();
+            user.setPasswordResetToken(token);
+            user.setPasswordResetTokenExpiresAt(LocalDateTime.now().plusMinutes(30));
+            userRepository.save(user);
+            emailService.sendPasswordResetEmail(user.getEmail(), frontendUrl + "/reset-password?token=" + token);
+        });
+    }
+
+    public void resetPassword(String token, String password) {
+        if (token == null || token.isBlank()) {
+            throw new RuntimeException("This reset link is invalid or has expired");
+        }
+        validatePassword(password);
+        User user = userRepository.findByPasswordResetToken(token)
+                .orElseThrow(() -> new RuntimeException("This reset link is invalid or has expired"));
+        if (user.getPasswordResetTokenExpiresAt() == null
+                || user.getPasswordResetTokenExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("This reset link is invalid or has expired");
+        }
+        user.setPassword(passwordEncoder.encode(password));
+        user.setPasswordResetToken(null);
+        user.setPasswordResetTokenExpiresAt(null);
+        userRepository.save(user);
+    }
+
+    private void validateGmail(String email) {
+        if (email == null || !email.trim().matches("^[A-Za-z0-9._%+-]+@gmail\\.com$")) {
+            throw new RuntimeException("Please use a valid @gmail.com address");
+        }
+    }
+
+    private void validatePassword(String password) {
+        if (password == null || password.length() < 8
+                || !password.matches(".*[A-Z].*")
+                || !password.matches(".*[a-z].*")
+                || !password.matches(".*\\d.*")) {
+            throw new RuntimeException("Password must be 8+ characters and include uppercase, lowercase, and a number");
+        }
     }
 
 

@@ -12,12 +12,32 @@ function Register() {
 
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    const passwordRules = {
+        length: password.length >= 8,
+        upper: /[A-Z]/.test(password),
+        lower: /[a-z]/.test(password),
+        number: /\d/.test(password)
+    };
+    const isValidPassword = Object.values(passwordRules).every(Boolean);
+    const isGmail = /^[A-Za-z0-9._%+-]+@gmail\.com$/.test(email.trim());
 
     const navigate = useNavigate();
 
     const handleRegister = async () => {
 
+        setError("");
         if (!username || !email || !password) {
+            setError("Please complete every field.");
+            return;
+        }
+        if (!isGmail) {
+            setError("Please enter a valid @gmail.com address.");
+            return;
+        }
+        if (!isValidPassword) {
+            setError("Please meet all password requirements.");
             return;
         }
 
@@ -43,7 +63,7 @@ function Register() {
 
         } catch (error) {
 
-            console.log("REGISTER ERROR:", error);
+            setError(error.response?.data?.message || "Unable to create your account. Please try again.");
 
         } finally {
 
@@ -117,6 +137,7 @@ function Register() {
                             setEmail(e.target.value)
                         }
                     />
+                    <small className="field-hint">A Gmail address is required (name@gmail.com).</small>
 
                 </div>
 
@@ -137,8 +158,16 @@ function Register() {
                             setPassword(e.target.value)
                         }
                     />
+                    <ul className="password-rules" aria-live="polite">
+                        <li className={passwordRules.length ? "valid" : ""}>At least 8 characters</li>
+                        <li className={passwordRules.upper ? "valid" : ""}>One uppercase letter</li>
+                        <li className={passwordRules.lower ? "valid" : ""}>One lowercase letter</li>
+                        <li className={passwordRules.number ? "valid" : ""}>One number</li>
+                    </ul>
 
                 </div>
+
+                {error && <p className="form-error" role="alert">{error}</p>}
 
 
                 {/* REGISTER BUTTON */}

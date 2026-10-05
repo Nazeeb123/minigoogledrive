@@ -404,6 +404,10 @@ function Login() {
 
                     </div>
 
+                    <div className="forgot-password-row">
+                        <Link to="/forgot-password">Forgot password?</Link>
+                    </div>
+
 
                     {/* NORMAL LOGIN */}
 

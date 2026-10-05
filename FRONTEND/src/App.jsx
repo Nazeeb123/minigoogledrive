@@ -9,6 +9,8 @@ import Starred from "./pages/Starred";
 import Trash from "./pages/Trash";
 import SearchPage from "./pages/SearchPage";
 import AI from "./pages/AI";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
 
@@ -22,6 +24,8 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route path="/dashboard" element={<Dashboard />} />
 
