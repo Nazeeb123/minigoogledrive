@@ -31,14 +31,24 @@ public class UserController {
 
     @PostMapping("/forgot-password")
     public java.util.Map<String, String> forgotPassword(@RequestBody java.util.Map<String, String> request) {
-        userService.requestPasswordReset(request.get("email"));
-        return java.util.Map.of("message", "If an account exists, a reset link has been sent.");
+        try {
+            userService.requestPasswordReset(request.get("email"));
+        } catch (Exception e) {
+            System.err.println("Forgot-password error (suppressed): " + e.getMessage());
+        }
+        return java.util.Map.of("message", "If an account exists with that email, a reset link has been sent.");
     }
 
     @PostMapping("/reset-password")
-    public java.util.Map<String, String> resetPassword(@RequestBody java.util.Map<String, String> request) {
-        userService.resetPassword(request.get("token"), request.get("password"));
-        return java.util.Map.of("message", "Your password has been updated. Please sign in.");
+    public org.springframework.http.ResponseEntity<java.util.Map<String, String>> resetPassword(@RequestBody java.util.Map<String, String> request) {
+        try {
+            userService.resetPassword(request.get("token"), request.get("password"));
+            return org.springframework.http.ResponseEntity.ok(
+                    java.util.Map.of("message", "Your password has been updated. Please sign in."));
+        } catch (RuntimeException e) {
+            return org.springframework.http.ResponseEntity.badRequest()
+                    .body(java.util.Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/google-login")

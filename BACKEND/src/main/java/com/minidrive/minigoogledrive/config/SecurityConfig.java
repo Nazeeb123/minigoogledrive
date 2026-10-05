@@ -42,7 +42,10 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/register",
-                                "/login")
+                                "/login",
+                                "/forgot-password",
+                                "/reset-password",
+                                "/google-login")
                         .permitAll()
 
                         .requestMatchers(
