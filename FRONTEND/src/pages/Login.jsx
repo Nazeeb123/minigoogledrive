@@ -9,6 +9,7 @@ function Login() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // ==============================
     // POPUP
@@ -165,6 +166,10 @@ function Login() {
 
     const handleLogin = async () => {
 
+        if (isSubmitting) {
+            return;
+        }
+
         if (!email || !password) {
 
             showPopup(
@@ -176,6 +181,7 @@ function Login() {
 
         }
 
+        setIsSubmitting(true);
 
         console.log(
             "Email sent:",
@@ -223,11 +229,7 @@ function Login() {
             );
 
 
-            setTimeout(() => {
-
-                navigate("/dashboard");
-
-            }, 800);
+            navigate("/dashboard");
 
 
         } catch (error) {
@@ -239,6 +241,10 @@ function Login() {
                 "Login failed",
                 "error"
             );
+
+        } finally {
+
+            setIsSubmitting(false);
 
         }
 
@@ -414,9 +420,10 @@ function Login() {
                     <button
                         className="login-button"
                         onClick={handleLogin}
+                        disabled={isSubmitting}
                     >
 
-                        Sign In
+                        {isSubmitting ? "Signing In..." : "Sign In"}
 
                     </button>
 
