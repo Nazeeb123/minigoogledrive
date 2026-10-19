@@ -45,6 +45,16 @@ function Login() {
     const navigate = useNavigate();
 
 
+    // Wake a sleeping backend while the user enters their credentials.
+    useEffect(() => {
+
+        API.get("/health").catch(() => {
+            // Login will report any actual authentication error.
+        });
+
+    }, []);
+
+
     // ==============================
     // GOOGLE LOGIN
     // ==============================
