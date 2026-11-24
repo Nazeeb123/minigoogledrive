@@ -20,10 +20,14 @@ import org.springframework.beans.factory.annotation.Value;
 @Service
 public class UserService {
 
+    private static final String GOOGLE_CLIENT_ID =
+            "97919262881-qf278cjpj709lodidkp7q1e5jea5ctb4.apps.googleusercontent.com";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final EmailService emailService;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -38,6 +42,13 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.emailService = emailService;
+        // Keep one verifier for the lifetime of the application. The verifier
+        // caches Google's public signing certificates, avoiding a network fetch
+        // on every Google sign-in.
+        this.googleIdTokenVerifier = new GoogleIdTokenVerifier.Builder(
+                new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
+                .build();
     }
 
 
@@ -110,7 +121,9 @@ public class UserService {
 
     public String loginUser(String email, String password) {
 
-        User user = userRepository.findByEmail(email)
+        String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() ->
                         new RuntimeException("User not found")
                 );
@@ -123,7 +136,7 @@ public class UserService {
             throw new RuntimeException("Invalid password");
         }
 
-        return jwtService.generateToken(email);
+        return jwtService.generateToken(normalizedEmail);
     }
 
 
@@ -135,21 +148,8 @@ public class UserService {
 
         try {
 
-            GoogleIdTokenVerifier verifier =
-                    new GoogleIdTokenVerifier.Builder(
-                            new NetHttpTransport(),
-                            GsonFactory.getDefaultInstance()
-                    )
-                    .setAudience(
-                            Collections.singletonList(
-                                    "97919262881-qf278cjpj709lodidkp7q1e5jea5ctb4.apps.googleusercontent.com"
-                            )
-                    )
-                    .build();
-
-
             GoogleIdToken idToken =
-                    verifier.verify(credential);
+                    googleIdTokenVerifier.verify(credential);
 
 
             if (idToken == null) {
@@ -164,8 +164,7 @@ public class UserService {
                     idToken.getPayload();
 
 
-            String email =
-                    payload.getEmail();
+            String email = payload.getEmail().trim().toLowerCase();
 
             String name =
                     (String) payload.get("name");

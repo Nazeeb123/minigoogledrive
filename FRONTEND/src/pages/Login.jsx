@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import API from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import "./Login.css";
@@ -10,6 +10,7 @@ function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const backendReady = useRef(Promise.resolve());
 
     // ==============================
     // POPUP
@@ -48,7 +49,7 @@ function Login() {
     // Wake a sleeping backend while the user enters their credentials.
     useEffect(() => {
 
-        API.get("/health").catch(() => {
+        backendReady.current = API.get("/health").catch(() => {
             // Login will report any actual authentication error.
         });
 
@@ -111,12 +112,20 @@ function Login() {
 
     const handleGoogleLogin = async (response) => {
 
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+
         console.log(
             "GOOGLE RESPONSE:",
             response
         );
 
         try {
+
+            // Let the early health check finish waking the backend before the
+            // authentication request competes with a cold start.
+            await backendReady.current;
 
             const result = await API.post(
                 "/google-login",
@@ -139,17 +148,7 @@ function Login() {
             );
 
 
-            showPopup(
-                "Google login successful",
-                "success"
-            );
-
-
-            setTimeout(() => {
-
-                navigate("/dashboard");
-
-            }, 800);
+            navigate("/dashboard");
 
 
         } catch (error) {
@@ -164,6 +163,10 @@ function Login() {
                 "Google login failed",
                 "error"
             );
+
+        } finally {
+
+            setIsSubmitting(false);
 
         }
 
@@ -205,6 +208,8 @@ function Login() {
 
 
         try {
+
+            await backendReady.current;
 
             const response = await API.post(
                 "/login",
